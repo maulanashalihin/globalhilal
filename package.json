@@ -1,5 +1,5 @@
 {
-  "name": "arabic-date",
+  "name": "globalhilal",
   "version": "0.0.0",
   "license": "MIT",
   "description": "Full-stack boilerplate: Hono + bun:sqlite + Inertia v3 (Svelte 5) with auth, roles, SSR, Tailwind v4, migrations, tests and Docker.",
