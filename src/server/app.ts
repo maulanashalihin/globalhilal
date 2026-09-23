@@ -136,6 +136,9 @@ export function createApp(assets: InertiaAssets) {
 	// the slash variants redirect onto them.
 	app.use(async (c, next) => {
 		const url = safeUrl(c.req.url);
+		// Behind a TLS-terminating proxy the origin sees http:// — take the
+		// public scheme from APP_URL (same pattern as auth.ts redirectTo).
+		url.protocol = safeUrl(config.appUrl).protocol;
 		const pathname = url.pathname;
 		if (pathname === "/en/" || pathname === "/ar/") {
 			url.pathname = pathname.slice(0, 3);
