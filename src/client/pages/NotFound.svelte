@@ -2,7 +2,7 @@
   import { Link, usePage } from '@inertiajs/svelte'
   import Layout from '../components/Layout.svelte'
   import PublicLayout from '../components/PublicLayout.svelte'
-  import { dict } from '../i18n'
+  import { dict, withLocale } from '../i18n'
   import type { Locale, SharedPageProps } from '../../shared/types'
 
   const page = usePage<SharedPageProps>()
@@ -19,7 +19,7 @@
   <p class="text-gh-soft">{t.common.notFoundBody}</p>
   <p>
     <Link
-      href="/"
+      href={withLocale(locale, '/')}
       class="inline-flex items-center justify-center gap-1.5 px-4 py-2.5 border border-gh-ink rounded-lg bg-gh-ink text-gh-sky font-semibold text-sm cursor-pointer transition-colors hover:opacity-85 hover:no-underline"
     >
       {t.common.goHome}

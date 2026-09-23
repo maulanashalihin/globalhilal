@@ -14,7 +14,7 @@
 <svelte:head>
   <title>{t.docs.title} — GlobalHilal</title>
   <meta name="description" content={t.meta.docsDescription} />
-  <link rel="canonical" href="https://globalhilal.org/docs" />
+  <link rel="canonical" href={`https://globalhilal.org/${locale}/docs`} />
 </svelte:head>
 
 <PublicLayout>

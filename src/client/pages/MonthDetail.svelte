@@ -3,7 +3,7 @@
   import Crescent from '../components/Crescent.svelte'
   import PublicLayout from '../components/PublicLayout.svelte'
   import StatusBadge from '../components/StatusBadge.svelte'
-  import { cityName, dict, fmtDate, fmtNum, placeLabel, placeName } from '../i18n'
+  import { cityName, dict, fmtDate, fmtNum, placeLabel, placeName, withLocale } from '../i18n'
   import type { Locale, MonthDetailJson, SharedPageProps } from '../../shared/types'
 
   let { detail }: { detail: MonthDetailJson } = $props()
@@ -18,7 +18,7 @@
   const monthSecondary = $derived(isAr ? m.month_en : m.month_ar)
   const year = $derived(fmtNum(m.hijri_year, locale))
   const sightedLabel = $derived(detail.sighted_in.map((p) => placeLabel(p, locale)).join('; '))
-  const pageUrl = $derived(`https://globalhilal.org/hijri/${m.month_key}`)
+  const pageUrl = $derived(`https://globalhilal.org/${locale}/hijri/${m.month_key}`)
   const jsonLd = $derived(
     JSON.stringify({
       '@context': 'https://schema.org',
@@ -45,7 +45,7 @@
 
 <PublicLayout>
   <p class="m-0 mb-3 text-sm text-gh-soft">
-    <Link href="/calendar">{t.month.calendarCrumb}</Link> · {t.common.hijriYear(year)}
+    <Link href={withLocale(locale, '/calendar')}>{t.month.calendarCrumb}</Link> · {t.common.hijriYear(year)}
   </p>
 
   <header class="flex gap-6 items-center flex-wrap pb-6 mb-6 border-b-2 border-gh-gold">

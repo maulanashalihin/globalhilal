@@ -1,7 +1,7 @@
 <script lang="ts">
   import { Link, usePage } from '@inertiajs/svelte'
   import PublicLayout from '../components/PublicLayout.svelte'
-  import { dict } from '../i18n'
+  import { dict, withLocale } from '../i18n'
   import type { Locale, SharedPageProps } from '../../shared/types'
 
   const page = usePage<SharedPageProps>()
@@ -12,7 +12,7 @@
 <svelte:head>
   <title>{t.methodology.title} — GlobalHilal</title>
   <meta name="description" content={t.meta.methodologyDescription} />
-  <link rel="canonical" href="https://globalhilal.org/methodology" />
+  <link rel="canonical" href={`https://globalhilal.org/${locale}/methodology`} />
 </svelte:head>
 
 <PublicLayout>
@@ -35,7 +35,7 @@
           </p>
           {#if i === t.methodology.rules.length - 1}
             <p class="mt-2 mb-0 leading-relaxed text-gh-soft max-w-[64ch]">
-              {t.methodology.archiveLead}<Link href="/calendar">{t.methodology.archiveLink}</Link>{t.methodology.archiveTail}
+              {t.methodology.archiveLead}<Link href={withLocale(locale, '/calendar')}>{t.methodology.archiveLink}</Link>{t.methodology.archiveTail}
             </p>
           {/if}
         </div>

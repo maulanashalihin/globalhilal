@@ -132,8 +132,8 @@ export class Inertia {
 		}
 		const { errors: flashErrors, ...flash } = this.c.flash;
 		const sharedProps: Record<string, unknown> = {
-			// Public pages pick this up (CDN variants are keyed per locale at
-			// the edge). Auth/admin pages receive it too but render English.
+			// Public page variants are keyed per locale URL at the edge
+			// (/en/… vs /ar/…). Auth/admin pages receive it too but render English.
 			locale: this.c.locale,
 			...pageProps,
 			errors: errors ?? flashErrors ?? {},

@@ -68,8 +68,8 @@ async function get(path: string): Promise<Response> {
 }
 
 describe("landing + today", () => {
-	it("renders / with today's Hijri date and CDN cache", async () => {
-		const res = await get("/");
+	it("renders /en with today's Hijri date and CDN cache", async () => {
+		const res = await get("/en");
 		expect(res.status).toBe(200);
 		expect(res.headers.get("content-type")).toContain("text/html");
 		expect(res.headers.get("cache-control")).toContain("public");
@@ -79,28 +79,28 @@ describe("landing + today", () => {
 		expect(html).toContain("Next moon watching");
 	});
 
-	it("renders /today with tz and fallback warning", async () => {
-		const res = await get("/today?tz=Asia/Jakarta");
+	it("renders /en/today with tz and fallback warning", async () => {
+		const res = await get("/en/today?tz=Asia/Jakarta");
 		expect(res.status).toBe(200);
 		expect(await res.text()).toContain("Asia/Jakarta");
 
-		const bad = await get("/today?tz=Not/AZone");
+		const bad = await get("/en/today?tz=Not/AZone");
 		expect(bad.status).toBe(200);
 		expect(await bad.text()).toContain("Unknown timezone");
 	});
 });
 
 describe("calendar + month detail", () => {
-	it("renders /calendar with the year grid", async () => {
-		const res = await get("/calendar?hijri_year=1447");
+	it("renders /en/calendar with the year grid", async () => {
+		const res = await get("/en/calendar?hijri_year=1447");
 		expect(res.status).toBe(200);
 		const html = await res.text();
 		expect(html).toContain("Ramadan");
 		expect(html).toContain("Awaiting rukyat");
 	});
 
-	it("renders /hijri/1447-09 with testimony and references", async () => {
-		const res = await get("/hijri/1447-09");
+	it("renders /en/hijri/1447-09 with testimony and references", async () => {
+		const res = await get("/en/hijri/1447-09");
 		expect(res.status).toBe(200);
 		const html = await res.text();
 		expect(html).toContain("Ramadan");
@@ -110,20 +110,20 @@ describe("calendar + month detail", () => {
 	});
 
 	it("returns 404 page for unknown month keys", async () => {
-		expect((await get("/hijri/1447-01")).status).toBe(404);
-		expect((await get("/hijri/nope")).status).toBe(404);
+		expect((await get("/en/hijri/1447-01")).status).toBe(404);
+		expect((await get("/en/hijri/nope")).status).toBe(404);
 	});
 });
 
 describe("static pages + SEO infra", () => {
 	it("renders methodology/sources/docs with long cache", async () => {
-		for (const p of ["/methodology", "/sources", "/docs"]) {
+		for (const p of ["/en/methodology", "/en/sources", "/en/docs"]) {
 			const res = await get(p);
 			expect(res.status).toBe(200);
 			expect(res.headers.get("cache-control")).toContain("s-maxage=86400");
 		}
-		expect(await (await get("/methodology")).text()).toContain("testimony");
-		expect(await (await get("/docs")).text()).toContain("/api/v1/today");
+		expect(await (await get("/en/methodology")).text()).toContain("testimony");
+		expect(await (await get("/en/docs")).text()).toContain("/api/v1/today");
 	});
 
 	it("serves robots.txt and sitemap.xml", async () => {
@@ -135,7 +135,9 @@ describe("static pages + SEO infra", () => {
 		expect(sm.status).toBe(200);
 		expect(sm.headers.get("content-type")).toContain("application/xml");
 		const xml = await sm.text();
-		expect(xml).toContain("/hijri/1447-09");
-		expect(xml).toContain("/methodology");
+		expect(xml).toContain("/en/hijri/1447-09");
+		expect(xml).toContain("/ar/hijri/1447-09");
+		expect(xml).toContain("/en/methodology");
+		expect(xml).toContain('hreflang="ar"');
 	});
 });

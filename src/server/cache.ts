@@ -16,6 +16,11 @@
  * the HTML user-agnostic → CF can cache it. The client fetches user
  * identity separately via `GET /api/session` after hydration.
  *
+ * Locales live in the URL path (`/en/...`, `/ar/...`), so each language
+ * is a separate edge cache key by construction — no cookie/header cache
+ * rules needed. The origin still sets `Content-Language` naming the
+ * rendered locale on every 200 response (HTML and XHR JSON).
+ *
  * ```ts
  * import { cacheablePublic } from "../cache";
  *
@@ -41,12 +46,9 @@ import type { AppEnv } from "./inertia-middleware";
  * are skipped — they are small and cached separately via the `_spa` query
  * param the client adds.
  *
- * Locale headers are set on every 200 response (HTML *and* XHR JSON, since
- * Cloudflare caches `_spa=1` payloads too): `Content-Language` names the
- * rendered locale and `Vary` documents the inputs the origin used. Note that
- * Cloudflare ignores `Vary` for its own cache key — the edge cache key must
- * be configured to include `CF-IPCountry` and the `gh_locale` cookie (see
- * README "Localization").
+ * `Content-Language` names the rendered locale on every 200 response (HTML
+ * *and* XHR JSON). No `Vary` is needed: the locale is part of the URL path,
+ * so the edge already keys each language separately.
  */
 export const cacheablePublic =
 	(sMaxAge: number, swr: number) =>
@@ -54,7 +56,6 @@ export const cacheablePublic =
 		await next();
 		if (c.res.status === 200) {
 			c.res.headers.set("Content-Language", c.get("locale"));
-			c.res.headers.set("Vary", "CF-IPCountry, Cookie, Accept-Language");
 			if (!c.req.header("x-inertia")) {
 				c.res.headers.set(
 					"Cache-Control",

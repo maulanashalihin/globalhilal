@@ -3,7 +3,7 @@
   import Crescent from '../components/Crescent.svelte'
   import PublicLayout from '../components/PublicLayout.svelte'
   import StatusBadge from '../components/StatusBadge.svelte'
-  import { dict, fmtDate, fmtNum, placeLabel } from '../i18n'
+  import { dict, fmtDate, fmtNum, placeLabel, withLocale } from '../i18n'
   import type { Locale, SharedPageProps, TodayData } from '../../shared/types'
 
   let { tz, today, tzFallback }: { tz: string; today: TodayData | null; tzFallback: string | null } = $props()
@@ -20,7 +20,7 @@
 
   function applyTz(e: SubmitEvent) {
     e.preventDefault()
-    router.get('/today', { tz: tzInput.trim() || 'UTC' })
+    router.get(withLocale(locale, '/today'), { tz: tzInput.trim() || 'UTC' })
   }
 
   const COMMON_ZONES = ['UTC', 'Asia/Jakarta', 'Asia/Makassar', 'Asia/Jayapura', 'Asia/Dubai', 'Asia/Riyadh', 'Europe/London', 'America/New_York']
@@ -29,7 +29,7 @@
 <svelte:head>
   <title>{today ? `${fmtNum(today.hijri.day, locale)} ${monthPrimary} ${fmtNum(today.hijri.year, locale)}` : t.today.titleFallback} — GlobalHilal</title>
   <meta name="description" content={t.meta.todayDescription} />
-  <link rel="canonical" href="https://globalhilal.org/today" />
+  <link rel="canonical" href={`https://globalhilal.org/${locale}/today`} />
 </svelte:head>
 
 <PublicLayout>
@@ -105,7 +105,7 @@
       {/if}
       <p class="m-0 text-sm text-gh-soft">
         {t.common.nextWatching}: <strong class="text-gh-ink">{fmtDate(today.next_observation_date, locale)}</strong> ·
-        <Link href={`/hijri/${today.hijri.month_key}`} class="font-semibold">{t.common.monthDetail}</Link>
+        <Link href={withLocale(locale, `/hijri/${today.hijri.month_key}`)} class="font-semibold">{t.common.monthDetail}</Link>
       </p>
     </section>
   {:else}

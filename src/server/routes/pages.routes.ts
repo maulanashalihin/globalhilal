@@ -1,22 +1,18 @@
 /**
- * Page routes: the Inertia app-shell pages (/, /dashboard, /admin).
+ * Page routes: the Inertia app-shell pages (/dashboard, /admin).
  * Feature pages get their own `<feature>.routes.ts` — see AGENTS.md
  * "Route conventions".
  *
- * `/` is a **public, CDN-cacheable** page: rendered with `{ public: true }`
- * so the HTML contains no user-specific data. Cloudflare caches the
- * response (s-maxage=300, SWR=600). The client fetches user identity via
- * `GET /api/session` after hydration. Auth pages (/dashboard, /admin) are
- * private and never cached.
+ * Auth pages (/dashboard, /admin) are private and never cached. The public
+ * landing root lives in hijri.routes.ts (mounted at /en + /ar) — it is
+ * public content, not app shell.
  */
 import { Hono } from "hono";
 import { requireAuth, requireRole } from "../auth";
-import { cacheablePublic } from "../cache";
 import { countUsers, listHijriMonthsAsc, listReferencesByMonth, listUsers, recentUsers, toPublicUser } from "../db";
 import type { AppEnv } from "../inertia-middleware";
 import type { DashboardStats, Paginated, User } from "../../shared/types";
 import { getTodayData, utcToday } from "../hijri";
-import { homeProps } from "./hijri.routes";
 
 function dashboardStats(): Promise<DashboardStats> {
 	return (async () => {
@@ -48,13 +44,6 @@ function dashboardStats(): Promise<DashboardStats> {
 export const pageRoutes = () => {
 	const app = new Hono<AppEnv>();
 
-	// GlobalHilal landing — public, CDN-cacheable (5 min TTL, 10 min SWR).
-	// Rendered with { public: true } so no auth.user in the page props;
-	// the client fetches user identity via GET /api/session.
-	app.use("/", cacheablePublic(300, 600));
-	app.get("/", async (c) =>
-		c.var.inertia.render("Home", await homeProps(c.var.locale), { public: true }),
-	);
 	app.get("/dashboard", requireAuth, async (c) =>
 		c.var.inertia.render("Dashboard", { stats: await dashboardStats() }),
 	);

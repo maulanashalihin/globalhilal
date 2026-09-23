@@ -73,31 +73,31 @@ const goodReport = {
 
 describe("public witness form", () => {
 	it("renders the contribute page with month options", async () => {
-		const res = await call("/contribute", { headers: xhr });
+		const res = await call("/en/contribute", { headers: xhr });
 		expect(res.status).toBe(200);
 		const data = await page(res);
 		expect(data.component).toBe("Contribute");
 		expect(data.props.months.some((m: { month_key: string }) => m.month_key === "1448-04")).toBe(true);
 		// CDN cache header applies to browser visits (Inertia XHR excluded).
-		const html = await call("/contribute");
+		const html = await call("/en/contribute");
 		expect(html.headers.get("cache-control")).toContain("public");
 	});
 
 	it("rejects invalid reports without consuming the daily quota", async () => {
-		const res = await call("/contribute", { method: "POST", headers: xhr, body: { ...goodReport, country: "" } });
+		const res = await call("/en/contribute", { method: "POST", headers: xhr, body: { ...goodReport, country: "" } });
 		expect(res.status).toBe(422);
 	});
 
 	it("accepts one report then blocks the second from the same IP that day", async () => {
-		const first = await call("/contribute", { method: "POST", headers: xhr, body: goodReport });
+		const first = await call("/en/contribute", { method: "POST", headers: xhr, body: goodReport });
 		expect(first.status).toBe(303);
-		expect(new URL(first.headers.get("location")!).pathname).toBe("/contribute");
+		expect(new URL(first.headers.get("location")!).pathname).toBe("/en/contribute");
 
 		const rows = dbm.listWitnessReportsByStatus.all("pending");
 		expect(rows).toHaveLength(1);
 		expect(rows[0]!.reporterName).toBe("Hamba Allah");
 
-		const second = await call("/contribute", { method: "POST", headers: xhr, body: goodReport });
+		const second = await call("/en/contribute", { method: "POST", headers: xhr, body: goodReport });
 		expect(second.status).toBe(422);
 		expect((await page(second)).props.errors.note).toContain("already submitted");
 		expect(dbm.listWitnessReportsByStatus.all("pending")).toHaveLength(1);

@@ -3,7 +3,7 @@
   import Crescent from '../components/Crescent.svelte'
   import PublicLayout from '../components/PublicLayout.svelte'
   import StatusBadge from '../components/StatusBadge.svelte'
-  import { dict, fmtDate, fmtNum } from '../i18n'
+  import { dict, fmtDate, fmtNum, withLocale } from '../i18n'
   import type { CalendarMonthSlot, Locale, SharedPageProps } from '../../shared/types'
 
   let { years, selectedYear, months }: { years: number[]; selectedYear: number | null; months: CalendarMonthSlot[] } = $props()
@@ -15,14 +15,14 @@
 
   function pickYear(e: Event) {
     const y = (e.target as HTMLSelectElement).value
-    router.get('/calendar', y ? { hijri_year: y } : {})
+    router.get(withLocale(locale, '/calendar'), y ? { hijri_year: y } : {})
   }
 </script>
 
 <svelte:head>
   <title>{selectedYear ? t.calendar.title(fmtNum(selectedYear, locale)) : t.calendar.titleFallback} — GlobalHilal</title>
   <meta name="description" content={t.meta.calendarDescription} />
-  <link rel="canonical" href="https://globalhilal.org/calendar" />
+  <link rel="canonical" href={`https://globalhilal.org/${locale}/calendar`} />
 </svelte:head>
 
 <PublicLayout>
@@ -69,7 +69,7 @@
           </span>
           <div class="min-w-0">
             <p class="m-0 mb-0.5 font-bold text-[1.05rem]">
-              <span class="text-gh-soft font-semibold tabular-nums me-2">{fmtNum(String(i + 1).padStart(2, '0'), locale)}</span>{#if m.month_key}<Link href={`/hijri/${m.month_key}`}>{monthPrimary}</Link>{:else}{monthPrimary}{/if}
+              <span class="text-gh-soft font-semibold tabular-nums me-2">{fmtNum(String(i + 1).padStart(2, '0'), locale)}</span>{#if m.month_key}<Link href={withLocale(locale, `/hijri/${m.month_key}`)}>{monthPrimary}</Link>{:else}{monthPrimary}{/if}
             </p>
             <p
               class={`m-0 mb-2 text-gh-soft ${isAr ? '' : 'font-arabic'}`}

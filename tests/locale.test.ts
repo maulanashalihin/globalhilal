@@ -1,46 +1,74 @@
 /**
- * Locale resolution + display formatting (pure functions, no app boot).
- * Run with: bun test --isolate.
+ * Locale resolution (pure functions, no app boot) + display formatting.
+ * Locales live in the URL path (/en/…, /ar/…); prefix-less public URLs
+ * redirect by geography. Run with: bun test --isolate.
  */
 import { describe, expect, it } from "bun:test";
 import { fmtDate, fmtNum, toArabicDigits } from "../src/client/i18n/format";
 import { cityName, placeLabel, placeName } from "../src/client/i18n/places";
-import { isLocale, isRtl, resolveLocale } from "../src/server/locale";
+import {
+	geoLocale,
+	isLocale,
+	isRtl,
+	localeFromPath,
+	stripLocalePrefix,
+	withLocalePrefix,
+} from "../src/server/locale";
 
-describe("resolveLocale", () => {
-	it("prefers the explicit cookie over geo", () => {
-		expect(resolveLocale({ cookie: "en", country: "SA" })).toBe("en");
-		expect(resolveLocale({ cookie: "ar", country: "ID" })).toBe("ar");
+describe("localeFromPath", () => {
+	it("reads the locale from the /en and /ar prefixes", () => {
+		expect(localeFromPath("/en/")).toBe("en");
+		expect(localeFromPath("/en/today?tz=UTC")).toBe("en");
+		expect(localeFromPath("/ar/hijri/1448-04")).toBe("ar");
+		expect(localeFromPath("/ar")).toBe("ar");
 	});
 
-	it("falls back to CF-IPCountry for Arab-League states", () => {
+	it("returns null for prefix-less and unknown paths", () => {
+		for (const p of ["/", "/today", "/login", "/dashboard", "/api/v1/today", "/fr/today", "/english"]) {
+			expect(localeFromPath(p)).toBeNull();
+		}
+	});
+});
+
+describe("stripLocalePrefix / withLocalePrefix", () => {
+	it("strips a leading locale prefix", () => {
+		expect(stripLocalePrefix("/ar/today")).toBe("/today");
+		expect(stripLocalePrefix("/en/")).toBe("/");
+		expect(stripLocalePrefix("/en")).toBe("/");
+		expect(stripLocalePrefix("/today")).toBe("/today");
+		expect(stripLocalePrefix("/")).toBe("/");
+	});
+
+	it("prefixes root-absolute paths", () => {
+		expect(withLocalePrefix("ar", "/today")).toBe("/ar/today");
+		expect(withLocalePrefix("en", "/")).toBe("/en");
+		expect(withLocalePrefix("ar", "/hijri/1448-04")).toBe("/ar/hijri/1448-04");
+	});
+});
+
+describe("geoLocale", () => {
+	it("redirects Arab-League states to Arabic", () => {
 		for (const country of ["SA", "ae", " EG ", "QA", "MA", "YE"]) {
-			expect(resolveLocale({ country })).toBe("ar");
+			expect(geoLocale({ country })).toBe("ar");
 		}
 	});
 
 	it("treats non-Arab / unknown / Tor countries as English", () => {
 		for (const country of ["ID", "US", "GB", "XX", "T1", "", null, undefined]) {
-			expect(resolveLocale({ country })).toBe("en");
+			expect(geoLocale({ country })).toBe("en");
 		}
 	});
 
 	it("uses Accept-Language when geo is silent or non-Arab", () => {
-		expect(resolveLocale({ acceptLanguage: "ar-EG,ar;q=0.9,en;q=0.8" })).toBe("ar");
-		expect(resolveLocale({ acceptLanguage: "ar;q=0" })).toBe("en");
-		expect(resolveLocale({ acceptLanguage: "en-US,en;q=0.9" })).toBe("en");
-		expect(resolveLocale({})).toBe("en");
+		expect(geoLocale({ acceptLanguage: "ar-EG,ar;q=0.9,en;q=0.8" })).toBe("ar");
+		expect(geoLocale({ acceptLanguage: "ar;q=0" })).toBe("en");
+		expect(geoLocale({ acceptLanguage: "en-US,en;q=0.9" })).toBe("en");
+		expect(geoLocale({})).toBe("en");
 		// A non-Arab country does not force English — the browser language
 		// still decides (dev/curl without the CF header).
-		expect(resolveLocale({ country: "ID", acceptLanguage: "ar" })).toBe("ar");
+		expect(geoLocale({ country: "ID", acceptLanguage: "ar" })).toBe("ar");
 		// An Arab country wins over an English browser language.
-		expect(resolveLocale({ country: "SA", acceptLanguage: "en" })).toBe("ar");
-	});
-
-	it("ignores malformed cookie values", () => {
-		expect(resolveLocale({ cookie: "fr", country: "EG" })).toBe("ar");
-		// Cookie values are case-insensitive.
-		expect(resolveLocale({ cookie: "AR" })).toBe("ar");
+		expect(geoLocale({ country: "SA", acceptLanguage: "en" })).toBe("ar");
 	});
 
 	it("narrows locale literals", () => {

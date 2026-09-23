@@ -4,6 +4,12 @@
  * `cacheablePublic` header. New feature pages live here — not in
  * pages.routes.ts (app shell only). See AGENTS.md "Route conventions".
  *
+ * This factory is mounted twice — at `/en` and `/ar` (see app.ts) — so
+ * every route below serves both locales with the locale in the URL path
+ * (cache-safe, no cookies). That includes the landing root `/`, which
+ * lives here rather than pages.routes.ts because it is public content,
+ * not app shell; `homeProps` feeds it.
+ *
  *   /today?tz=            — Hijri date for a timezone (default UTC)
  *   /calendar?hijri_year= — 12-month grid for a Hijri year
  *   /hijri/:key           — month detail, e.g. /hijri/1447-09
@@ -99,6 +105,15 @@ const CONTRIBUTE_ERRORS: Record<
 
 export const hijriRoutes = () => {
 	const app = new Hono<AppEnv>();
+
+	// GlobalHilal landing — public, CDN-cacheable (5 min TTL, 10 min SWR).
+	// Rendered with { public: true } so no auth.user in the page props;
+	// the client fetches user identity via GET /api/session. Served at
+	// /en/ and /ar/ via the locale mounts in app.ts.
+	app.use("/", cacheablePublic(300, 600));
+	app.get("/", async (c) =>
+		c.var.inertia.render("Home", await homeProps(c.var.locale), { public: true }),
+	);
 
 	app.use("/today", cacheablePublic(300, 600));
 	app.get("/today", async (c) => {
@@ -220,7 +235,7 @@ export const hijriRoutes = () => {
 			// 422 (not 429) so Inertia populates the form error reliably.
 			return page.error("Contribute", { note: errors.duplicate });
 		}
-		return page.redirect("/contribute?submitted=1");
+		return page.redirect(`/${c.var.locale}/contribute?submitted=1`);
 	});
 	app.use("/sources", staticCache);
 	app.get("/sources", (c) =>

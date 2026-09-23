@@ -1,7 +1,7 @@
 <script lang="ts">
   import { Link, useForm, usePage } from '@inertiajs/svelte'
   import PublicLayout from '../components/PublicLayout.svelte'
-  import { dict } from '../i18n'
+  import { dict, withLocale } from '../i18n'
   import type { Locale, SharedPageProps } from '../../shared/types'
 
   let { months, submitted }: { months: { month_key: string; month_en: string; month_ar: string }[]; submitted: boolean } = $props()
@@ -29,7 +29,7 @@
       city: d.city === '' ? null : d.city,
       contact: d.contact === '' ? null : d.contact,
     }))
-    form.post('/contribute')
+    form.post(withLocale(locale, '/contribute'))
   }
 
   const inputClass =
@@ -41,7 +41,7 @@
 <svelte:head>
   <title>{t.contribute.title} — GlobalHilal</title>
   <meta name="description" content={t.meta.contributeDescription} />
-  <link rel="canonical" href="https://globalhilal.org/contribute" />
+  <link rel="canonical" href={`https://globalhilal.org/${locale}/contribute`} />
 </svelte:head>
 
 <PublicLayout>
@@ -130,7 +130,7 @@
       </button>
     </div>
     <p class="m-0 text-sm text-gh-soft">
-      {t.contribute.readMethodologyLead}<Link href="/methodology" class="font-semibold">{t.contribute.readMethodologyLink}</Link>{t.contribute.readMethodologyTail}
+      {t.contribute.readMethodologyLead}<Link href={withLocale(locale, '/methodology')} class="font-semibold">{t.contribute.readMethodologyLink}</Link>{t.contribute.readMethodologyTail}
     </p>
   </form>
 </PublicLayout>

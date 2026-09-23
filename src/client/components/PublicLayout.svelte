@@ -2,7 +2,7 @@
   import { Link, usePage } from '@inertiajs/svelte'
   import type { Snippet } from 'svelte'
   import Brand from './Brand.svelte'
-  import { dict } from '../i18n'
+  import { dict, switchLocalePath, withLocale } from '../i18n'
   import type { Locale, SharedPageProps } from '../../shared/types'
 
   let { children }: { children: Snippet } = $props()
@@ -16,16 +16,18 @@
   const isAr = $derived(locale === 'ar')
 
   const NAV = $derived([
-    { href: '/today', label: t.nav.today },
-    { href: '/calendar', label: t.nav.calendar },
-    { href: '/contribute', label: t.nav.contribute },
-    { href: '/methodology', label: t.nav.methodology },
-    { href: '/sources', label: t.nav.sources },
-    { href: '/docs', label: t.nav.docs },
+    { path: '/today', label: t.nav.today },
+    { path: '/calendar', label: t.nav.calendar },
+    { path: '/contribute', label: t.nav.contribute },
+    { path: '/methodology', label: t.nav.methodology },
+    { path: '/sources', label: t.nav.sources },
+    { path: '/docs', label: t.nav.docs },
   ])
 
-  const isActive = (href: string) =>
-    href === '/today' ? currentPath === '/' || currentPath === '/today' : currentPath.startsWith(href)
+  const isActive = (path: string) =>
+    path === '/today'
+      ? currentPath === withLocale(locale, '/') || currentPath === withLocale(locale, '/today')
+      : currentPath.startsWith(withLocale(locale, path))
 </script>
 
 <div
@@ -33,12 +35,12 @@
 >
   <header class="sticky top-0 z-30 border-b border-gh-line bg-gh-sky/90 backdrop-blur">
     <div class="w-full max-w-[1020px] mx-auto px-4 py-3 flex items-center gap-5 flex-wrap">
-      <Brand href="/" class="text-[1.05rem]" />
+      <Brand href={withLocale(locale, '/')} class="text-[1.05rem]" />
       <nav class="flex items-center gap-1 flex-wrap" aria-label={t.nav.aria}>
-        {#each NAV as item (item.href)}
-          {@const active = isActive(item.href)}
+        {#each NAV as item (item.path)}
+          {@const active = isActive(item.path)}
           <Link
-            href={item.href}
+            href={withLocale(locale, item.path)}
             class={`px-3 py-1.5 rounded-md text-sm transition-colors hover:no-underline ${active ? 'bg-gh-gold-soft text-gh-gold font-bold' : 'text-gh-soft hover:text-gh-ink hover:bg-gh-panel'}`}
             aria-current={active ? 'page' : undefined}
           >
@@ -46,26 +48,21 @@
           </Link>
         {/each}
       </nav>
-      <div class="ms-auto flex items-center gap-3 text-sm">
-        <form method="post" action="/locale" class="flex items-center">
-          <input type="hidden" name="redirectTo" value={url ?? '/'} />
-          <label class="sr-only" for="locale-select">{t.header.language}</label>
-          <select
-            id="locale-select"
-            name="locale"
-            value={locale}
-            class="h-8 ps-2 pe-6 border border-gh-line rounded-md bg-gh-sky text-gh-ink text-sm cursor-pointer"
-            onchange={(e) => e.currentTarget.form?.submit()}
-          >
-            <option value="en">English</option>
-            <option value="ar">العربية</option>
-          </select>
-          <noscript>
-            <button type="submit" class="ms-1 h-8 px-2 border border-gh-line rounded-md bg-gh-panel text-gh-ink text-sm cursor-pointer">
-              OK
-            </button>
-          </noscript>
-        </form>
+      <div class="ms-auto flex items-center gap-1 text-sm" aria-label={t.header.language}>
+        <Link
+          href={switchLocalePath(url ?? '/', 'en')}
+          class={`px-2.5 py-1.5 rounded-md transition-colors hover:no-underline ${locale === 'en' ? 'bg-gh-gold-soft text-gh-gold font-bold' : 'text-gh-soft hover:text-gh-ink hover:bg-gh-panel'}`}
+          aria-current={locale === 'en' ? 'page' : undefined}
+        >
+          English
+        </Link>
+        <Link
+          href={switchLocalePath(url ?? '/', 'ar')}
+          class={`px-2.5 py-1.5 rounded-md transition-colors hover:no-underline ${locale === 'ar' ? 'bg-gh-gold-soft text-gh-gold font-bold' : 'text-gh-soft hover:text-gh-ink hover:bg-gh-panel'}`}
+          aria-current={locale === 'ar' ? 'page' : undefined}
+        >
+          العربية
+        </Link>
       </div>
     </div>
   </header>
@@ -85,17 +82,17 @@
       <nav aria-label={t.footer.site}>
         <p class="m-0 mb-2 text-xs font-bold uppercase tracking-widest text-gh-soft">{t.footer.site}</p>
         <ul class="m-0 p-0 list-none flex flex-col gap-1.5 text-sm">
-          <li><Link href="/today">{t.footer.todayDate}</Link></li>
-          <li><Link href="/calendar">{t.footer.calendar}</Link></li>
-          <li><Link href="/methodology">{t.footer.methodology}</Link></li>
+          <li><Link href={withLocale(locale, '/today')}>{t.footer.todayDate}</Link></li>
+          <li><Link href={withLocale(locale, '/calendar')}>{t.footer.calendar}</Link></li>
+          <li><Link href={withLocale(locale, '/methodology')}>{t.footer.methodology}</Link></li>
         </ul>
       </nav>
       <div>
         <p class="m-0 mb-2 text-xs font-bold uppercase tracking-widest text-gh-soft">{t.footer.developers}</p>
         <ul class="m-0 p-0 list-none flex flex-col gap-1.5 text-sm">
-          <li><Link href="/docs">{t.footer.freeApi}</Link></li>
-          <li><Link href="/sources">{t.footer.sources}</Link></li>
-          <li><Link href="/contribute">{t.footer.reportSighting}</Link></li>
+          <li><Link href={withLocale(locale, '/docs')}>{t.footer.freeApi}</Link></li>
+          <li><Link href={withLocale(locale, '/sources')}>{t.footer.sources}</Link></li>
+          <li><Link href={withLocale(locale, '/contribute')}>{t.footer.reportSighting}</Link></li>
         </ul>
       </div>
     </div>

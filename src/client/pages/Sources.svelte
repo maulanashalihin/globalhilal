@@ -1,7 +1,7 @@
 <script lang="ts">
   import { Link, usePage } from '@inertiajs/svelte'
   import PublicLayout from '../components/PublicLayout.svelte'
-  import { dict } from '../i18n'
+  import { dict, withLocale } from '../i18n'
   import type { Locale, SharedPageProps } from '../../shared/types'
 
   const page = usePage<SharedPageProps>()
@@ -12,7 +12,7 @@
 <svelte:head>
   <title>{t.sources.title} — GlobalHilal</title>
   <meta name="description" content={t.meta.sourcesDescription} />
-  <link rel="canonical" href="https://globalhilal.org/sources" />
+  <link rel="canonical" href={`https://globalhilal.org/${locale}/sources`} />
 </svelte:head>
 
 <PublicLayout>
@@ -40,7 +40,7 @@
           {t.sources.checkBody1}
         </p>
         <p class="m-0">
-          {t.sources.checkBody2Lead}<Link href="/contribute" class="font-semibold">{t.sources.checkBody2Link}</Link>{t.sources.checkBody2Tail}
+          {t.sources.checkBody2Lead}<Link href={withLocale(locale, '/contribute')} class="font-semibold">{t.sources.checkBody2Link}</Link>{t.sources.checkBody2Tail}
         </p>
       </div>
     </section>

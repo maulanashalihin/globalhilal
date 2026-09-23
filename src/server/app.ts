@@ -39,8 +39,7 @@ import {
 	ADMIN_HIJRI_VALIDATION_MESSAGES,
 } from "./routes/admin-hijri.routes";
 import { uploadsRoutes } from "./routes/uploads.routes";
-import { localeRoutes } from "./routes/locale.routes";
-import { DEFAULT_LOCALE } from "./locale";
+import { DEFAULT_LOCALE, geoLocale, localeFromPath, stripLocalePrefix, withLocalePrefix } from "./locale";
 import { checkOrigin } from "./security";
 import { safeUrl } from "./url";
 import { ValidationFailed } from "./validation";
@@ -76,6 +75,11 @@ const isUploadsPath = (pathname: string) =>
 	pathname === "/uploads" || pathname.startsWith("/uploads/");
 
 const UPLOADS_RE = /^\/uploads(\/|$)/;
+
+// Prefix-less public URLs from the cookie era — redirected (geo, no-store)
+// to their /en or /ar equivalent by the locale middleware above.
+const LEGACY_PUBLIC_RE =
+	/^\/(today|calendar|methodology|sources|docs|contribute|hijri)(\/|$)/;
 
 /**
  * Build the Inertia adapter for error/not-found paths. The global
@@ -124,6 +128,32 @@ export function createApp(assets: InertiaAssets) {
 		}),
 	);
 	app.use(inertiaMiddleware(assets));
+	// Locale URL prefixes (no cookies): public content lives under /en/*
+	// and /ar/*. Prefix-less legacy URLs (/, /today, /hijri/:key, …)
+	// redirect to the geo-appropriate locale (CF-IPCountry → Accept-Language
+	// → en) with no-store, so the edge never caches one visitor's geography
+	// as everyone's answer. Locale roots are slash-less (/en, /ar);
+	// the slash variants redirect onto them.
+	app.use(async (c, next) => {
+		const url = safeUrl(c.req.url);
+		const pathname = url.pathname;
+		if (pathname === "/en/" || pathname === "/ar/") {
+			url.pathname = pathname.slice(0, 3);
+			return Response.redirect(url.toString(), 302);
+		}
+		if (localeFromPath(pathname)) return next();
+		if (pathname !== "/" && !LEGACY_PUBLIC_RE.test(pathname)) return next();
+		const locale = geoLocale({
+			country: c.req.header("cf-ipcountry"),
+			acceptLanguage: c.req.header("accept-language"),
+		});
+		url.pathname = withLocalePrefix(locale, pathname);
+		const status = c.req.method === "GET" || c.req.method === "HEAD" ? 302 : 307;
+		return new Response(null, {
+			status,
+			headers: { location: url.toString(), "cache-control": "no-store" },
+		});
+	});
 	// Per-request CSP with nonce — must run after inertiaMiddleware (which
 	// generates the nonce). Inline scripts (theme boot, page payload) and
 	// inline styles (Inertia progress bar) carry the nonce; 'unsafe-inline'
@@ -199,11 +229,14 @@ export function createApp(assets: InertiaAssets) {
 
 		// Schema validation (TypeBox) → 422 with field errors, Inertia-aware.
 		if (err instanceof ValidationFailed) {
+			// Public form paths carry a locale prefix (/en/contribute) —
+			// strip it before mapping back to the Inertia component.
+			const formPath = stripLocalePrefix(pathname);
 			const component =
-				COMPONENT_BY_PATH[pathname] ??
-				(pathname === "/admin/hijri/months"
+				COMPONENT_BY_PATH[formPath] ??
+				(formPath === "/admin/hijri/months"
 					? "AdminHijri"
-					: pathname.startsWith("/admin/hijri/")
+					: formPath.startsWith("/admin/hijri/")
 						? "AdminHijriDetail"
 						: undefined);
 			const errors: Record<string, string> = {};
@@ -281,8 +314,11 @@ export function createApp(assets: InertiaAssets) {
 		});
 	});
 	app.get("/sitemap.xml", () => {
-		const urls = [
-			"",
+		// Both locales get their own URLs (separate edge cache keys by
+		// construction) with hreflang alternates so crawlers index each
+		// language without duplicate-content penalties.
+		const paths = [
+			"/",
 			"/today",
 			"/calendar",
 			"/contribute",
@@ -291,19 +327,24 @@ export function createApp(assets: InertiaAssets) {
 			"/docs",
 			...listPublicHijriMonthsAsc.all().map((r) => `/hijri/${r.monthKey}`),
 		];
-		const items = urls
-			.map((u) => `  <url><loc>${config.appUrl}${u || "/"}</loc></url>`)
+		const items = paths
+			.map(
+				(p) =>
+					`  <url><loc>${config.appUrl}/en${p}</loc>` +
+					`<xhtml:link rel="alternate" hreflang="en" href="${config.appUrl}/en${p}"/>` +
+					`<xhtml:link rel="alternate" hreflang="ar" href="${config.appUrl}/ar${p}"/></url>`,
+			)
 			.join("\n");
 		return new Response(
-			`<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n${items}\n</urlset>`,
+			`<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9" xmlns:xhtml="http://www.w3.org/1999/xhtml">\n${items}\n</urlset>`,
 			{ status: 200, headers: { "content-type": "application/xml; charset=utf-8" } },
 		);
 	});
 
 	app.route("/uploads", uploadsRoutes());
 	app.route("/api/v1", hijriApiRoutes());
-	app.route("/", localeRoutes());
-	app.route("/", hijriRoutes());
+	app.route("/en", hijriRoutes());
+	app.route("/ar", hijriRoutes());
 	app.route("/", adminHijriRoutes());
 	app.route("/", apiRoutes());
 	app.route("/", authRoutes());

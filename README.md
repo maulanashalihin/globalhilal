@@ -96,15 +96,18 @@ at the CDN edge. The admin console (`/dashboard`, `/admin/hijri`) is private.
 Public pages are bilingual. The API is **always English** — one contract for
 every consumer.
 
-- **Detection order** (`src/server/locale.ts`): `gh_locale` cookie → Cloudflare
-  `CF-IPCountry` (22 Arab-League states → Arabic) → `Accept-Language`
-  (dev/curl fallback) → English.
-- **Switcher**: the navbar dropdown POSTs to `/locale` (native form, works
-  without JS) and stores the explicit choice in `gh_locale` for a year. The
-  cookie always wins; deleting it restores the geo default.
-- **URLs stay single**: no `?lang=` and no `/ar/` prefix. The server renders
-  `lang`/`dir` (RTL for Arabic) and `Content-Language` per request; `Vary:
-  CF-IPCountry, Cookie, Accept-Language` documents the inputs.
+- **Locales in the URL** (`src/server/locale.ts`): public content lives under
+  `/en/…` and `/ar/…` — one cache key and one shareable, indexable URL per
+  language. There is no locale cookie.
+- **Root redirect**: `/` (and any prefix-less legacy URL like `/today`)
+  302-redirects by geography — Cloudflare `CF-IPCountry` (22 Arab-League
+  states → Arabic) → `Accept-Language` → English — with `no-store`, so the
+  edge never caches one visitor's geography as everyone's answer.
+- **Switcher**: the navbar shows `English | العربية` links to the same page
+  in the other locale (plain Inertia links, work without JS).
+- **URLs stay per-locale**: the server renders `lang`/`dir` (RTL for Arabic)
+  and `Content-Language` per request; no `Vary` is needed since the locale
+  is part of the path.
 - **Editorial content** carries optional `_ar` columns (`decision_summary_ar`,
   `note_ar`, `title_ar`, `quote_ar`). Empty means "not translated yet" and the
   page falls back to the English text. The admin console shows a warning (never
@@ -122,17 +125,17 @@ every consumer.
 
 ### Cloudflare setup (required in production)
 
-1. **Network → IP Geolocation = ON** — without it `CF-IPCountry` is not sent.
-2. **Cache Rule** for the site: Cache Key → include header `CF-IPCountry` and
-   cookie `gh_locale` (the specific cookie name, not the whole `Cookie`
-   header); keep the query string (so the Inertia `_spa=1` payload stays a
-   separate key). Cloudflare ignores `Vary` for its own cache key, so this rule
-   is what keeps Arabic and English HTML in separate edge entries.
+1. **Network → IP Geolocation = ON** — without it `CF-IPCountry` is not sent
+   and prefix-less URLs always land on English.
+2. No locale cache rules needed: `/en/…` and `/ar/…` are distinct URLs, so
+   each language is a separate edge entry by construction (keep the query
+   string so the Inertia `_spa=1` payload stays a separate key).
 3. Verify:
-   `curl -sI -H 'CF-IPCountry: SA' https://globalhilal.org/today` →
-   `content-language: ar`; repeat with `-H 'Cookie: gh_locale=en'` → `en`.
-4. SEO note: crawlers carry no cookie and are not in an Arab country, so they
-   index the English version; the Arabic variant has no separate URL by design.
+   `curl -sI https://globalhilal.org/ar/` → `content-language: ar`;
+   `curl -sI -H 'CF-IPCountry: SA' https://globalhilal.org/` → `302` to `/ar/`.
+4. SEO note: both locales are indexed under their own URLs (`/en/…`,
+   `/ar/…`) with hreflang alternates in `sitemap.xml`; crawlers outside
+   Arab-League countries land on English via the `/` redirect.
 
 ## Editorial workflow
 
@@ -197,7 +200,7 @@ src/
 │   ├── config.ts           # validated env config (fails fast)
 │   ├── db.ts               # bun:sqlite: connection, prepared statements
 │   ├── hijri.ts            # domain logic + public serializers (shared by API and pages)
-│   ├── locale.ts           # AR/EN resolution (cookie → CF-IPCountry → Accept-Language)
+│   ├── locale.ts           # AR/EN resolution (URL prefix + geo redirect)
 │   ├── migrations.ts       # SQL migration runner
 │   ├── auth.ts             # argon2id, sessions, flash, cookies, reset tokens, guards
 │   ├── inertia.ts          # Inertia v3 server adapter (SSR shell, XHR, 409)
@@ -213,8 +216,7 @@ src/
 │   ├── tus-storage.ts      # tus upload bytes on disk (data/uploads)
 │   └── routes/
 │       ├── hijri-api.routes.ts    # /api/v1/* (public JSON, CORS, rate limit)
-│       ├── hijri.routes.ts        # public pages: /today, /calendar, /hijri/:key, /methodology, /sources, /docs
-│       ├── locale.routes.ts       # /locale (language switcher: cookie + redirect)
+│       ├── hijri.routes.ts        # public pages, mounted at /en + /ar: /, /today, /calendar, /hijri/:key, /methodology, /sources, /docs
 │       ├── admin-hijri.routes.ts  # /admin/hijri* (editorial console, admin role)
 │       ├── api.routes.ts          # /api/session (user identity for public pages)
 │       ├── auth.routes.ts         # /login /register /logout /forgot/reset (GET+POST)
@@ -287,8 +289,8 @@ bun test --isolate   # or: bun run test
 129 tests across 9 files: auth/roles/reset/Inertia/CSRF, tus uploads, avatar
 upload, Hijri domain logic, public API v1 (incl. rate-limit 429 and draft
 invisibility), public pages (SSR + cache + sitemap), admin console (guards,
-CRUD, publish rule), locale resolution + bilingual pages (AR/EN, digits,
-`/locale`, API-stays-English regression). Each file boots the app against an
+CRUD, publish rule), locale prefixes + geo redirects + bilingual pages (AR/EN,
+digits, API-stays-English regression). Each file boots the app against an
 in-memory DB; `--isolate` is required (suites set env in `beforeAll`,
 `db.close()` in `afterAll`).
 

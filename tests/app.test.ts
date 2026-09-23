@@ -91,8 +91,8 @@ async function registerUser(
 }
 
 describe("auth basics", () => {
-	it("renders / as a public page for guests (CDN-cacheable)", async () => {
-		const res = await call("/");
+	it("renders /en as a public page for guests (CDN-cacheable)", async () => {
+		const res = await call("/en");
 		expect(res.status).toBe(200);
 		expect(res.headers.get("content-type")).toContain("text/html");
 		// Public pages get CDN cache headers (not private/no-store)

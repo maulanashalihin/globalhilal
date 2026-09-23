@@ -35,7 +35,7 @@
         </div>
         <p class="m-0 ml-auto">
           <Link
-            href={`/hijri/${today.hijri.month_key}`}
+            href={`/en/hijri/${today.hijri.month_key}`}
             class="inline-flex items-center px-4 py-2.5 rounded-md bg-[#e3b93e] text-gh-night font-semibold text-sm cursor-pointer hover:no-underline hover:opacity-90"
           >
             View public page

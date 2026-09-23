@@ -125,7 +125,7 @@
 <Layout>
   <p class="text-sm text-gh-soft m-0 mb-1"><Link href="/admin/hijri">Hijri months</Link> · {m.month_key}
     {#if m.status !== 'draft'}
-      · <a href={`/hijri/${m.month_key}`} target="_blank" rel="noopener">View public page</a>
+      · <a href={`/en/hijri/${m.month_key}`} target="_blank" rel="noopener">View public page</a>
     {/if}
   </p>
   <h1 class="text-[1.6rem] m-0 mb-1 tracking-tight">{m.month_en} {m.hijri_year}</h1>

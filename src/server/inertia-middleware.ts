@@ -20,7 +20,7 @@ import type { FlashData, Locale, User } from "../shared/types";
 import { readFlash, resolveUser, SESSION_COOKIE } from "./auth";
 import { toPublicUser } from "./db";
 import { Inertia, type InertiaAssets } from "./inertia";
-import { LOCALE_COOKIE, resolveLocale } from "./locale";
+import { localeFromPath } from "./locale";
 
 /** Context variables shared by every route/middleware. */
 export interface AppEnv {
@@ -32,7 +32,8 @@ export interface AppEnv {
 		requestId: string;
 		/** Per-request CSP nonce (base64, 18 chars). */
 		cspNonce: string;
-		/** Resolved UI locale (cookie → CF-IPCountry → Accept-Language → en). */
+		/** Resolved UI locale — from the `/en`/`/ar` URL prefix on public
+		 *  pages; auth/admin/API routes are unprefixed and always English. */
 		locale: Locale;
 	};
 }
@@ -45,11 +46,9 @@ export const inertiaMiddleware =
 		const user = row ? toPublicUser(row) : null;
 		const flash = readFlash(sessionToken);
 		const cspNonce = randomBytes(16).toString("base64");
-		const locale = resolveLocale({
-			cookie: getCookie(c, LOCALE_COOKIE),
-			country: c.req.header("cf-ipcountry"),
-			acceptLanguage: c.req.header("accept-language"),
-		});
+		// Public content carries its locale in the URL (`/en/...`, `/ar/...`);
+		// everything else renders the English chrome.
+		const locale = localeFromPath(c.req.path) ?? "en";
 		c.set("user", user);
 		c.set("flash", flash);
 		c.set("sessionToken", sessionToken);

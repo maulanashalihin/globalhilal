@@ -1,8 +1,9 @@
 /**
- * i18n E2E: locale detection through the real app (CF-IPCountry + cookie),
- * localized editorial content, Arabic-Indic digits, cache headers, and the
- * guarantee that the public API stays English. Boots the full app (with the
- * real SSR bundle) against an in-memory DB. Run with: bun test --isolate.
+ * i18n E2E: locale URL prefixes (/en/…, /ar/…) through the real app, geo
+ * redirects for prefix-less URLs, localized editorial content,
+ * Arabic-Indic digits, cache headers, and the guarantee that the public
+ * API stays English. Boots the full app (with the real SSR bundle)
+ * against an in-memory DB. Run with: bun test --isolate.
  */
 import { afterAll, beforeAll, describe, expect, it } from "bun:test";
 
@@ -73,12 +74,11 @@ const get = (path: string, headers: Record<string, string> = {}) =>
 
 const ARABIC_DIGIT_RE = /[\u0660-\u0669]/;
 
-describe("locale detection on public pages", () => {
-	it("serves Arabic (RTL, Arabic digits, Arabic summary) for SA", async () => {
-		const res = await get("/", { "CF-IPCountry": "SA" });
+describe("locale prefixes on public pages", () => {
+	it("serves Arabic (RTL, Arabic digits, Arabic summary) at /ar", async () => {
+		const res = await get("/ar");
 		expect(res.status).toBe(200);
 		expect(res.headers.get("content-language")).toBe("ar");
-		expect(res.headers.get("vary")).toContain("CF-IPCountry");
 		expect(res.headers.get("cache-control")).toContain("public");
 		const html = await res.text();
 		expect(html).toContain('<html lang="ar" dir="rtl">');
@@ -86,34 +86,20 @@ describe("locale detection on public pages", () => {
 		expect(html).not.toContain("Crescent sighted in Tumair");
 		expect(html).toMatch(ARABIC_DIGIT_RE);
 		expect(html).toContain("الترقب القادم للهلال");
+		// Same-page links keep the prefix (SPA navigation stays Arabic).
+		expect(html).toContain('href="/ar/calendar"');
 	});
 
-	it("serves English for non-Arab countries", async () => {
-		const res = await get("/", { "CF-IPCountry": "ID" });
+	it("serves English at /en regardless of geography", async () => {
+		const res = await get("/en", { "CF-IPCountry": "SA" });
 		expect(res.headers.get("content-language")).toBe("en");
 		const html = await res.text();
 		expect(html).toContain('<html lang="en" dir="ltr">');
 		expect(html).toContain("Crescent sighted in Tumair");
 	});
 
-	it("lets the cookie override geo in both directions", async () => {
-		const enInSa = await get("/", {
-			"CF-IPCountry": "SA",
-			Cookie: "gh_locale=en",
-		});
-		expect(enInSa.headers.get("content-language")).toBe("en");
-		expect(await enInSa.text()).toContain("Crescent sighted in Tumair");
-
-		const arInId = await get("/", {
-			"CF-IPCountry": "ID",
-			Cookie: "gh_locale=ar",
-		});
-		expect(arInId.headers.get("content-language")).toBe("ar");
-		expect(await arInId.text()).toContain('<html lang="ar" dir="rtl">');
-	});
-
 	it("falls back to English content when a month has no Arabic", async () => {
-		const res = await get("/hijri/1448-03", { "CF-IPCountry": "SA" });
+		const res = await get("/ar/hijri/1448-03");
 		expect(res.status).toBe(200);
 		const html = await res.text();
 		expect(html).toContain('<html lang="ar" dir="rtl">');
@@ -123,54 +109,52 @@ describe("locale detection on public pages", () => {
 	});
 
 	it("localizes the witness form chrome and month names", async () => {
-		const res = await get("/contribute", { "CF-IPCountry": "EG" });
+		const res = await get("/ar/contribute");
 		const html = await res.text();
 		expect(html).toContain("ربيع الثاني");
 		expect(html).toContain("أرسل الشهادة");
 	});
 
 	it("localizes place names in sighting reports", async () => {
-		const res = await get("/hijri/1448-04", { "CF-IPCountry": "SA" });
+		const res = await get("/ar/hijri/1448-04");
 		const html = await res.text();
 		expect(html).toContain("السعودية · تمير");
 		expect(html).not.toContain("Saudi Arabia · Tumair");
 	});
 });
 
-describe("POST /locale", () => {
-	it("sets the cookie and bounces back", async () => {
-		const res = await app.request(`${BASE}/locale`, {
-			method: "POST",
-			headers: { "content-type": "application/x-www-form-urlencoded" },
-			body: new URLSearchParams({ locale: "ar", redirectTo: "/today?tz=UTC" }),
-		});
-		expect(res.status).toBe(303);
-		expect(res.headers.get("location")).toBe("/today?tz=UTC");
-		expect(res.headers.get("set-cookie") ?? "").toContain("gh_locale=ar");
+describe("prefix-less URL redirects", () => {
+	it("redirects / by country, never cached", async () => {
+		const sa = await get("/", { "CF-IPCountry": "SA" });
+		expect(sa.status).toBe(302);
+		expect(new URL(sa.headers.get("location")!).pathname).toBe("/ar");
+		expect(sa.headers.get("cache-control")).toBe("no-store");
+
+		const id = await get("/", { "CF-IPCountry": "ID" });
+		expect(id.status).toBe(302);
+		expect(new URL(id.headers.get("location")!).pathname).toBe("/en");
 	});
 
-	it("rejects off-site redirects and unknown locales", async () => {
-		const offSite = await app.request(`${BASE}/locale`, {
-			method: "POST",
-			headers: { "content-type": "application/x-www-form-urlencoded" },
-			body: new URLSearchParams({ locale: "ar", redirectTo: "https://evil.example" }),
-		});
-		expect(offSite.headers.get("location")).toBe("/");
+	it("redirects legacy public paths preserving path + query", async () => {
+		const res = await get("/today?tz=Asia/Jakarta", { "CF-IPCountry": "EG" });
+		expect(res.status).toBe(302);
+		const location = new URL(res.headers.get("location")!);
+		expect(location.pathname).toBe("/ar/today");
+		expect(location.search).toBe("?tz=Asia/Jakarta");
 
-		const protocolRelative = await app.request(`${BASE}/locale`, {
-			method: "POST",
-			headers: { "content-type": "application/x-www-form-urlencoded" },
-			body: new URLSearchParams({ locale: "en", redirectTo: "//evil.example" }),
-		});
-		expect(protocolRelative.headers.get("location")).toBe("/");
+		const month = await get("/hijri/1448-04", { "CF-IPCountry": "ID" });
+		expect(new URL(month.headers.get("location")!).pathname).toBe("/en/hijri/1448-04");
+	});
 
-		const bogus = await app.request(`${BASE}/locale`, {
-			method: "POST",
-			headers: { "content-type": "application/x-www-form-urlencoded" },
-			body: new URLSearchParams({ locale: "fr", redirectTo: "/" }),
-		});
-		expect(bogus.status).toBe(303);
-		expect(bogus.headers.get("set-cookie")).toBeNull();
+	it("leaves auth, admin, API and infra paths alone", async () => {
+		// No locale-prefix redirect: either a direct response or an
+		// auth-guard redirect (whose target is outside /en|/ar).
+		for (const p of ["/login", "/admin/hijri", "/api/v1/today", "/health", "/robots.txt", "/sitemap.xml"]) {
+			const res = await get(p);
+			const location = res.headers.get("location");
+			const target = location ? new URL(location, BASE).pathname : null;
+			expect(target == null || !/^\/(en|ar)(\/|$)/.test(target)).toBe(true);
+		}
 	});
 });
 

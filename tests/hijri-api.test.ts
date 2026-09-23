@@ -181,8 +181,8 @@ describe("draft invisibility", () => {
 		expect((await get("/api/v1/months/1447/11")).status).toBe(404);
 		const list = await (await get("/api/v1/months?hijri_year=1447")).json();
 		expect(list.data.some((m: { month_key: string }) => m.month_key === "1447-11")).toBe(false);
-		expect((await get("/hijri/1447-11")).status).toBe(404);
-		expect((await get("/calendar?hijri_year=1447")).status).toBe(200);
+		expect((await get("/en/hijri/1447-11")).status).toBe(404);
+		expect((await get("/en/calendar?hijri_year=1447")).status).toBe(200);
 	});
 });
 

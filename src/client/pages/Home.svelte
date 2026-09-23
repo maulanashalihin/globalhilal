@@ -4,7 +4,7 @@
   import PublicLayout from '../components/PublicLayout.svelte'
   import Stars from '../components/Stars.svelte'
   import StatusBadge from '../components/StatusBadge.svelte'
-  import { dict, fmtDate, fmtNum, placeLabel } from '../i18n'
+  import { dict, fmtDate, fmtNum, placeLabel, withLocale } from '../i18n'
   import type { Locale, SharedPageProps, TodayData } from '../../shared/types'
 
   let { today }: { today: TodayData | null } = $props()
@@ -24,7 +24,7 @@
       ? `${fmtNum(today.hijri.day, locale)} ${monthPrimary} ${fmtNum(today.hijri.year, locale)} — GlobalHilal`
       : 'GlobalHilal — Global moon-sighting Hijri calendar',
   )
-  const canonical = 'https://globalhilal.org/'
+  const canonical = `https://globalhilal.org/${locale}`
 </script>
 
 <svelte:head>
@@ -95,7 +95,7 @@
           </ul>
         {/if}
         <p class="m-0 text-sm">
-          <Link href={`/hijri/${today.hijri.month_key}`} class="font-semibold">
+          <Link href={withLocale(locale, `/hijri/${today.hijri.month_key}`)} class="font-semibold">
             {t.common.readRuling}
           </Link>
         </p>
@@ -114,7 +114,7 @@
     <section class="mt-10 border-t border-gh-line pt-6 flex gap-4 items-baseline flex-wrap">
       <p class="m-0 text-sm text-gh-soft">
         {t.home.apiCta}
-        <Link href="/docs" class="font-semibold">{t.home.apiCtaLink}</Link>.
+        <Link href={withLocale(locale, '/docs')} class="font-semibold">{t.home.apiCtaLink}</Link>.
       </p>
     </section>
   {:else}
