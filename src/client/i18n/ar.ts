@@ -12,6 +12,8 @@ export const ar: Dict = {
 	langName: "العربية",
 	nav: {
 		aria: "التنقل الرئيسي",
+		menu: "القائمة",
+		close: "إغلاق القائمة",
 		today: "اليوم",
 		calendar: "التقويم",
 		contribute: "شارك رؤيتك",

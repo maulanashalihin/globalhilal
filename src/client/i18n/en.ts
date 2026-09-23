@@ -10,6 +10,8 @@ export const en = {
 	langName: "English",
 	nav: {
 		aria: "Primary",
+		menu: "Menu",
+		close: "Close menu",
 		today: "Today",
 		calendar: "Calendar",
 		contribute: "Contribute",
