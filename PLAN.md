@@ -52,7 +52,8 @@ Contoh teks methodology (EN) disiapkan editor, bukan developer.
 ### Non-MVP (ditunda eksplisit)
 
 - Kalender prediksi masa depan / estimasi bulan ke depan (DITOLAK secara prinsip — V1 maupun V2 tidak membuat forecast; hanya `next_observation_date`).
-- Perhitungan Maghrib per-kota, peta visibilitas hilal, notifikasi (email/Telegram), API key/kuota, multi-bahasa (AR/ID), kalender ICS feed, widget JS versi 2. Catat di roadmap, jangan dikerjakan di V1.
+- Perhitungan Maghrib per-kota, peta visibilitas hilal, notifikasi (email/Telegram), API key/kuota, kalender ICS feed, widget JS versi 2. Catat di roadmap, jangan dikerjakan di V1.
+- Multi-bahasa (AR/EN) sekarang **aktif** dengan rencana terpisah: [`PLAN-I18N.md`](PLAN-I18N.md) (deteksi `CF-IPCountry` + cookie, API tidak berubah).
 
 ---
 
@@ -304,7 +305,7 @@ As-built (disederhanakan dari rencana dinamis — TTL tetap, terdokumentasi):
 ## 11. SEO, i18n & aksesibilitas (syarat "berguna untuk seluruh dunia")
 
 - SEO: `<title>` + meta description per page, canonical URL (`/hijri/1447-09`), sitemap.xml + robots.txt (tambah route di `app.ts` sebagai infra endpoint), OG tags, JSON-LD (`Dataset`/`Article` untuk month detail).
-- Satu bahasa konten: **English** (termasuk `decision_summary_en`, `note_en`). Nama bulan Arab ditampilkan sebagai pelengkap (`month_ar`), bukan pengganti.
+- Satu bahasa konten: **English** (termasuk `decision_summary_en`, `note_en`). Nama bulan Arab ditampilkan sebagai pelengkap (`month_ar`), bukan pengganti. → Diperluas oleh [`PLAN-I18N.md`](PLAN-I18N.md): versi Arab opsional di kolom `_ar`, fallback ke `_en`.
 - A11y: badge status punya teks (bukan warna saja), tabel sighting pakai `<th scope>`, kontras ikut token dark-mode yang ada.
 - Embed: sediakan snippet `<iframe src="/today?embed=1">` ringan (tanpa nav) — V1 cukup mode `embed=1` yang render minimal.
 

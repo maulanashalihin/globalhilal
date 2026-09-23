@@ -239,19 +239,20 @@ export interface HijriMonthRow {
 	lengthDays: 29 | 30 | null;
 	status: string;
 	decisionSummaryEn: string;
+	decisionSummaryAr: string;
 	createdBy: number | null;
 	publishedAt: string | null;
 	updatedAt: string;
 }
 
-const HIJRI_MONTH_COLS = `id, hijri_year AS hijriYear, hijri_month AS hijriMonth, month_key AS monthKey, month_name_en AS monthEn, month_name_ar AS monthAr, start_gregorian AS startGregorian, end_gregorian AS endGregorian, length_days AS lengthDays, status, decision_summary_en AS decisionSummaryEn, created_by AS createdBy, published_at AS publishedAt, updated_at AS updatedAt`;
+const HIJRI_MONTH_COLS = `id, hijri_year AS hijriYear, hijri_month AS hijriMonth, month_key AS monthKey, month_name_en AS monthEn, month_name_ar AS monthAr, start_gregorian AS startGregorian, end_gregorian AS endGregorian, length_days AS lengthDays, status, decision_summary_en AS decisionSummaryEn, decision_summary_ar AS decisionSummaryAr, created_by AS createdBy, published_at AS publishedAt, updated_at AS updatedAt`;
 
 export const insertHijriMonth = db.query<
 	{ id: number },
-	[string, number, number, string, string, string, string | null, number | null, string, string, number | null, string | null]
+	[string, number, number, string, string, string, string | null, number | null, string, string, string, number | null, string | null]
 >(
-	`INSERT INTO hijri_months (month_key, hijri_year, hijri_month, month_name_en, month_name_ar, start_gregorian, end_gregorian, length_days, status, decision_summary_en, created_by, published_at)
-   VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?) RETURNING id`,
+	`INSERT INTO hijri_months (month_key, hijri_year, hijri_month, month_name_en, month_name_ar, start_gregorian, end_gregorian, length_days, status, decision_summary_en, decision_summary_ar, created_by, published_at)
+   VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?) RETURNING id`,
 );
 
 export const findHijriMonthByKey = db.query<HijriMonthRow, [string]>(
@@ -276,9 +277,9 @@ export const countHijriMonths = db.query<{ n: number }, []>(
 
 export const updateHijriMonth = db.query<
 	null,
-	[string, string | null, number | null, string, string, number]
+	[string, string | null, number | null, string, string, string, number]
 >(
-	`UPDATE hijri_months SET start_gregorian = ?, end_gregorian = ?, length_days = ?, status = ?, decision_summary_en = ?, updated_at = strftime('%Y-%m-%dT%H:%M:%fZ','now') WHERE id = ?`,
+	`UPDATE hijri_months SET start_gregorian = ?, end_gregorian = ?, length_days = ?, status = ?, decision_summary_en = ?, decision_summary_ar = ?, updated_at = strftime('%Y-%m-%dT%H:%M:%fZ','now') WHERE id = ?`,
 );
 
 export interface SightingReportRow {
@@ -294,16 +295,17 @@ export interface SightingReportRow {
 	witnessOrg: string | null;
 	verified: number;
 	noteEn: string;
+	noteAr: string;
 }
 
-const SIGHTING_COLS = `id, month_id AS monthId, country, city, lat, lon, sighted_on AS sightedOn, result, method, witness_org AS witnessOrg, verified, note_en AS noteEn`;
+const SIGHTING_COLS = `id, month_id AS monthId, country, city, lat, lon, sighted_on AS sightedOn, result, method, witness_org AS witnessOrg, verified, note_en AS noteEn, note_ar AS noteAr`;
 
 export const insertSightingReport = db.query<
 	{ id: number },
-	[number, string, string | null, number | null, number | null, string, string, string, string | null, number, string]
+	[number, string, string | null, number | null, number | null, string, string, string, string | null, number, string, string]
 >(
-	`INSERT INTO sighting_reports (month_id, country, city, lat, lon, sighted_on, result, method, witness_org, verified, note_en)
-   VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?) RETURNING id`,
+	`INSERT INTO sighting_reports (month_id, country, city, lat, lon, sighted_on, result, method, witness_org, verified, note_en, note_ar)
+   VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?) RETURNING id`,
 );
 
 export const listSightingsByMonth = db.query<SightingReportRow, [number]>(
@@ -314,21 +316,23 @@ export interface MonthReferenceRow {
 	id: number;
 	monthId: number;
 	titleEn: string;
+	titleAr: string;
 	publisher: string;
 	url: string;
 	publishedAt: string | null;
 	quoteEn: string;
+	quoteAr: string;
 	kind: string;
 }
 
-const REFERENCE_COLS = `id, month_id AS monthId, title_en AS titleEn, publisher, url, published_at AS publishedAt, quote_en AS quoteEn, kind`;
+const REFERENCE_COLS = `id, month_id AS monthId, title_en AS titleEn, title_ar AS titleAr, publisher, url, published_at AS publishedAt, quote_en AS quoteEn, quote_ar AS quoteAr, kind`;
 
 export const insertMonthReference = db.query<
 	{ id: number },
-	[number, string, string, string, string | null, string, string]
+	[number, string, string, string, string, string | null, string, string, string]
 >(
-	`INSERT INTO month_references (month_id, title_en, publisher, url, published_at, quote_en, kind)
-   VALUES (?, ?, ?, ?, ?, ?, ?) RETURNING id`,
+	`INSERT INTO month_references (month_id, title_en, title_ar, publisher, url, published_at, quote_en, quote_ar, kind)
+   VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?) RETURNING id`,
 );
 
 export const listReferencesByMonth = db.query<MonthReferenceRow, [number]>(
@@ -337,6 +341,23 @@ export const listReferencesByMonth = db.query<MonthReferenceRow, [number]>(
 
 export const findHijriMonthById = db.query<HijriMonthRow, [number]>(
 	`SELECT ${HIJRI_MONTH_COLS} FROM hijri_months WHERE id = ?`,
+);
+
+// ---------------------------------------------------------------------------
+// Arabic content backfill (scripts/seed-ar.ts) — targeted updates for the
+// pre-0010 archive. New translations are entered in the admin console.
+// ---------------------------------------------------------------------------
+
+export const updateMonthSummaryAr = db.query<null, [string, string]>(
+	`UPDATE hijri_months SET decision_summary_ar = ?, updated_at = strftime('%Y-%m-%dT%H:%M:%fZ','now') WHERE month_key = ?`,
+);
+
+export const updateSightingNoteAr = db.query<null, [string, number]>(
+	`UPDATE sighting_reports SET note_ar = ? WHERE id = ?`,
+);
+
+export const updateReferenceTranslation = db.query<null, [string, string, number]>(
+	`UPDATE month_references SET title_ar = ?, quote_ar = ? WHERE id = ?`,
 );
 
 // ---------------------------------------------------------------------------

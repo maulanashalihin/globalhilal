@@ -24,6 +24,7 @@ import { googleOauthRoutes } from "./routes/google-oauth.routes";
 import { hijriApiRoutes } from "./routes/hijri-api.routes";
 import {
 	CONTRIBUTE_VALIDATION_MESSAGES,
+	CONTRIBUTE_VALIDATION_MESSAGES_AR,
 	hijriRoutes,
 } from "./routes/hijri.routes";
 import { listPublicHijriMonthsAsc } from "./db";
@@ -38,10 +39,13 @@ import {
 	ADMIN_HIJRI_VALIDATION_MESSAGES,
 } from "./routes/admin-hijri.routes";
 import { uploadsRoutes } from "./routes/uploads.routes";
+import { localeRoutes } from "./routes/locale.routes";
+import { DEFAULT_LOCALE } from "./locale";
 import { checkOrigin } from "./security";
 import { safeUrl } from "./url";
 import { ValidationFailed } from "./validation";
 import type { Context } from "hono";
+import type { Locale } from "../shared/types";
 
 /** Form routes whose schema-level validation maps back to an Inertia page. */
 const COMPONENT_BY_PATH: Record<string, string> = {
@@ -54,11 +58,18 @@ const COMPONENT_BY_PATH: Record<string, string> = {
 	"/contribute": "Contribute",
 };
 
-const VALIDATION_MESSAGES_ALL = {
+const VALIDATION_MESSAGES_EN = {
 	...VALIDATION_MESSAGES,
 	...PROFILE_VALIDATION_MESSAGES,
 	...ADMIN_HIJRI_VALIDATION_MESSAGES,
 	...CONTRIBUTE_VALIDATION_MESSAGES,
+};
+
+/** Field messages by locale — only public (contribute) copy is translated;
+ *  auth/admin forms stay English. */
+const VALIDATION_MESSAGES_ALL: Record<Locale, Record<string, string>> = {
+	en: VALIDATION_MESSAGES_EN,
+	ar: { ...VALIDATION_MESSAGES_EN, ...CONTRIBUTE_VALIDATION_MESSAGES_AR },
 };
 
 const isUploadsPath = (pathname: string) =>
@@ -88,6 +99,7 @@ function inertiaFromContext(
 			flash: readFlash(sessionToken),
 			sessionToken,
 			cspNonce: c.get("cspNonce") ?? "",
+			locale: c.get("locale") ?? DEFAULT_LOCALE,
 		},
 		assets,
 	);
@@ -195,10 +207,11 @@ export function createApp(assets: InertiaAssets) {
 						? "AdminHijriDetail"
 						: undefined);
 			const errors: Record<string, string> = {};
+			const messages = VALIDATION_MESSAGES_ALL[c.get("locale") ?? "en"];
 			for (const item of err.errors) {
 				const field = item.path.replace(/^\//, "");
 				if (field && !errors[field])
-					errors[field] = VALIDATION_MESSAGES_ALL[item.path] ?? item.message;
+					errors[field] = messages[item.path] ?? item.message;
 			}
 			if (!component) return c.json({ errors }, 422);
 			return inertiaFromContext(c, assets).error(component, errors);
@@ -213,10 +226,12 @@ export function createApp(assets: InertiaAssets) {
 		if (isUploadsPath(pathname)) {
 			return c.json({ error: "Not found" }, 404);
 		}
+		// Guests get the public chrome — and therefore the localized shell;
+		// signed-in users keep the dashboard chrome on 404s.
 		return inertiaFromContext(c, assets).render(
 			"NotFound",
 			{},
-			{ status: 404 },
+			{ status: 404, public: !c.get("user") },
 		);
 	});
 
@@ -287,6 +302,7 @@ export function createApp(assets: InertiaAssets) {
 
 	app.route("/uploads", uploadsRoutes());
 	app.route("/api/v1", hijriApiRoutes());
+	app.route("/", localeRoutes());
 	app.route("/", hijriRoutes());
 	app.route("/", adminHijriRoutes());
 	app.route("/", apiRoutes());

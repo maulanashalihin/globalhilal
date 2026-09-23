@@ -12,6 +12,7 @@ import type {
 	CalendarMonthSlot,
 	HijriMonth,
 	HijriStatus,
+	Locale,
 	MonthDetailJson,
 	SightingReport,
 	TodayData,
@@ -184,6 +185,14 @@ export function utcToday(): string {
 // Used by both /api/v1/* and the Inertia pages so web and API never diverge.
 // ---------------------------------------------------------------------------
 
+/**
+ * Pick the Arabic text when the locale is `ar` and a translation exists,
+ * otherwise the English source. Empty/whitespace counts as untranslated.
+ */
+export function pickLocalized(en: string, ar: string, locale: Locale = "en"): string {
+	return locale === "ar" && ar.trim().length > 0 ? ar : en;
+}
+
 export function toSightingReport(row: SightingReportRow): SightingReport {
 	return {
 		id: row.id,
@@ -198,14 +207,17 @@ export function toSightingReport(row: SightingReportRow): SightingReport {
 		witnessOrg: row.witnessOrg,
 		verified: row.verified === 1,
 		noteEn: row.noteEn,
+		noteAr: row.noteAr,
 	};
 }
 
-/** Full month detail in public snake_case JSON (sighting/reference internals hidden). */
+/** Full month detail in public snake_case JSON (sighting/reference internals hidden).
+ *  `locale` localizes editorial text only; the API keeps the default `en`. */
 export function serializeMonthDetail(
 	row: HijriMonthRow,
 	sightingRows: SightingReportRow[],
 	referenceRows: MonthReferenceRow[],
+	locale: Locale = "en",
 ): MonthDetailJson {
 	const sightings = sightingRows.map(toSightingReport);
 	return {
@@ -219,7 +231,7 @@ export function serializeMonthDetail(
 			end_gregorian: row.endGregorian,
 			length_days: row.lengthDays,
 			status: row.status,
-			decision_summary: row.decisionSummaryEn,
+			decision_summary: pickLocalized(row.decisionSummaryEn, row.decisionSummaryAr, locale),
 			published_at: row.publishedAt,
 		},
 		sightings: sightings.map((s) => ({
@@ -232,14 +244,14 @@ export function serializeMonthDetail(
 			method: s.method,
 			witness_org: s.witnessOrg,
 			verified: s.verified,
-			note: s.noteEn,
+			note: pickLocalized(s.noteEn, s.noteAr, locale),
 		})),
 		references: referenceRows.map((r) => ({
-			title: r.titleEn,
+			title: pickLocalized(r.titleEn, r.titleAr, locale),
 			publisher: r.publisher,
 			url: r.url,
 			published_at: r.publishedAt,
-			quote: r.quoteEn,
+			quote: pickLocalized(r.quoteEn, r.quoteAr, locale),
 			kind: r.kind,
 		})),
 		sighted_in: sightedIn(sightings),
@@ -271,8 +283,13 @@ export function serializeMonthSummary(
  * Build the "today" payload for a Gregorian date. Returns null when no
  * rukyat determination covers the date (never forecasts). DB-backed —
  * imports statements lazily so pure-logic unit tests stay dependency-free.
+ * `locale` localizes editorial text only; the API keeps the default `en`.
  */
-export async function getTodayData(date: string, tz: string): Promise<TodayData | null> {
+export async function getTodayData(
+	date: string,
+	tz: string,
+	locale: Locale = "en",
+): Promise<TodayData | null> {
 	const db = await import("./db");
 	const months = db.listPublicHijriMonthsAsc.all().map((r) => ({
 		id: r.id,
@@ -286,6 +303,7 @@ export async function getTodayData(date: string, tz: string): Promise<TodayData 
 		lengthDays: r.lengthDays,
 		status: r.status,
 		decisionSummaryEn: r.decisionSummaryEn,
+		decisionSummaryAr: r.decisionSummaryAr,
 		publishedAt: r.publishedAt,
 		updatedAt: r.updatedAt,
 	}) as HijriMonth);
@@ -309,7 +327,11 @@ export async function getTodayData(date: string, tz: string): Promise<TodayData 
 			month_started_on: month.startGregorian,
 			month_length: lengthDays,
 			sighted_in: sightedIn(sightings),
-			decision_summary: month.decisionSummaryEn,
+			decision_summary: pickLocalized(
+				month.decisionSummaryEn,
+				month.decisionSummaryAr,
+				locale,
+			),
 			references_url: `/api/v1/months/${month.hijriYear}/${month.hijriMonth}`,
 		},
 		...(provisional

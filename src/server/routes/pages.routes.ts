@@ -53,7 +53,7 @@ export const pageRoutes = () => {
 	// the client fetches user identity via GET /api/session.
 	app.use("/", cacheablePublic(300, 600));
 	app.get("/", async (c) =>
-		c.var.inertia.render("Home", await homeProps(), { public: true }),
+		c.var.inertia.render("Home", await homeProps(c.var.locale), { public: true }),
 	);
 	app.get("/dashboard", requireAuth, async (c) =>
 		c.var.inertia.render("Dashboard", { stats: await dashboardStats() }),

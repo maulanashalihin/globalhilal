@@ -53,8 +53,9 @@ bun run dev          # http://localhost:4000
 | `bun run dev`       | Watch mode; rebuilds client assets on restart             |
 | `bun run build`     | Prebuild client assets → `dist/` (+ `manifest.json`)      |
 | `bun run start`     | Serve prebuilt assets (`NODE_ENV=production`)             |
-| `bun run test`      | Full suite — `bun test --isolate` (107 tests)             |
+| `bun run test`      | Full suite — `bun test --isolate` (129 tests)             |
 | `bun run db:seed`   | Create a user (`[email] [password] [role]` args)          |
+| `bun run db:seed-ar`| Backfill Arabic translations for the 1448H archive        |
 | `bun run typecheck` | `svelte-check` (0 errors)                                 |
 
 ## Public API (no auth, CORS open)
@@ -89,6 +90,49 @@ Errors are `{ error: { code, message } }` (`INVALID_TZ`, `INVALID_DATE`,
 
 Public pages render `{ public: true }` (no user data in HTML) and are cached
 at the CDN edge. The admin console (`/dashboard`, `/admin/hijri`) is private.
+
+## Localization (AR/EN)
+
+Public pages are bilingual. The API is **always English** — one contract for
+every consumer.
+
+- **Detection order** (`src/server/locale.ts`): `gh_locale` cookie → Cloudflare
+  `CF-IPCountry` (22 Arab-League states → Arabic) → `Accept-Language`
+  (dev/curl fallback) → English.
+- **Switcher**: the navbar dropdown POSTs to `/locale` (native form, works
+  without JS) and stores the explicit choice in `gh_locale` for a year. The
+  cookie always wins; deleting it restores the geo default.
+- **URLs stay single**: no `?lang=` and no `/ar/` prefix. The server renders
+  `lang`/`dir` (RTL for Arabic) and `Content-Language` per request; `Vary:
+  CF-IPCountry, Cookie, Accept-Language` documents the inputs.
+- **Editorial content** carries optional `_ar` columns (`decision_summary_ar`,
+  `note_ar`, `title_ar`, `quote_ar`). Empty means "not translated yet" and the
+  page falls back to the English text. The admin console shows a warning (never
+  blocks publishing) when a published month has no Arabic.
+- **Numerals**: public pages render Arabic-Indic digits (٠١٢٣٤٥٦٧٨٩) in Arabic;
+  forms, month keys, URLs and code samples keep Western digits.
+- **Places**: `country`/`city` stay free text in the DB (proper nouns); Arabic
+  pages map the known names at render time (`src/client/i18n/places.ts`) and
+  fall back to the stored text for anything unmapped.
+- **Backfill**: months seeded before migration 0010 get their Arabic via
+  `bun run db:seed-ar` (idempotent, matches rows by `month_key`, country +
+  sighting date, and reference URL; never creates content).
+- UI copy lives in `src/client/i18n/{en,ar}.ts` — `Dict` is derived from `en`,
+  so a missing Arabic key fails `bun run typecheck`.
+
+### Cloudflare setup (required in production)
+
+1. **Network → IP Geolocation = ON** — without it `CF-IPCountry` is not sent.
+2. **Cache Rule** for the site: Cache Key → include header `CF-IPCountry` and
+   cookie `gh_locale` (the specific cookie name, not the whole `Cookie`
+   header); keep the query string (so the Inertia `_spa=1` payload stays a
+   separate key). Cloudflare ignores `Vary` for its own cache key, so this rule
+   is what keeps Arabic and English HTML in separate edge entries.
+3. Verify:
+   `curl -sI -H 'CF-IPCountry: SA' https://globalhilal.org/today` →
+   `content-language: ar`; repeat with `-H 'Cookie: gh_locale=en'` → `en`.
+4. SEO note: crawlers carry no cookie and are not in an Arab country, so they
+   index the English version; the Arabic variant has no separate URL by design.
 
 ## Editorial workflow
 
@@ -153,6 +197,7 @@ src/
 │   ├── config.ts           # validated env config (fails fast)
 │   ├── db.ts               # bun:sqlite: connection, prepared statements
 │   ├── hijri.ts            # domain logic + public serializers (shared by API and pages)
+│   ├── locale.ts           # AR/EN resolution (cookie → CF-IPCountry → Accept-Language)
 │   ├── migrations.ts       # SQL migration runner
 │   ├── auth.ts             # argon2id, sessions, flash, cookies, reset tokens, guards
 │   ├── inertia.ts          # Inertia v3 server adapter (SSR shell, XHR, 409)
@@ -169,6 +214,7 @@ src/
 │   └── routes/
 │       ├── hijri-api.routes.ts    # /api/v1/* (public JSON, CORS, rate limit)
 │       ├── hijri.routes.ts        # public pages: /today, /calendar, /hijri/:key, /methodology, /sources, /docs
+│       ├── locale.routes.ts       # /locale (language switcher: cookie + redirect)
 │       ├── admin-hijri.routes.ts  # /admin/hijri* (editorial console, admin role)
 │       ├── api.routes.ts          # /api/session (user identity for public pages)
 │       ├── auth.routes.ts         # /login /register /logout /forgot/reset (GET+POST)
@@ -180,6 +226,7 @@ src/
 │   ├── app.ts              # Inertia client bootstrap (hydrate or mount)
 │   ├── ssr.ts              # in-process SSR renderer (svelte/server)
 │   ├── pages.ts            # explicit page registry (shared by SSR + bundle)
+│   ├── i18n/               # AR/EN dictionaries + Arabic-Indic digit formatting
 │   ├── pages/              # Home, Today, Calendar, MonthDetail, Methodology,
 │   │                       # Sources, Docs, Dashboard, AdminHijri(+Detail), …
 │   ├── components/         # PublicLayout, Layout, AuthLayout, Brand, Field,
@@ -237,12 +284,13 @@ Rules:
 bun test --isolate   # or: bun run test
 ```
 
-107 tests across 6 files: auth/roles/reset/Inertia/CSRF, tus uploads, avatar
+129 tests across 9 files: auth/roles/reset/Inertia/CSRF, tus uploads, avatar
 upload, Hijri domain logic, public API v1 (incl. rate-limit 429 and draft
 invisibility), public pages (SSR + cache + sitemap), admin console (guards,
-CRUD, publish rule). Each file boots the app against an in-memory DB;
-`--isolate` is required (suites set env in `beforeAll`, `db.close()` in
-`afterAll`).
+CRUD, publish rule), locale resolution + bilingual pages (AR/EN, digits,
+`/locale`, API-stays-English regression). Each file boots the app against an
+in-memory DB; `--isolate` is required (suites set env in `beforeAll`,
+`db.close()` in `afterAll`).
 
 Browser verification uses `playwright-cli` (global agent rule) — login,
 admin CRUD walkthroughs, and console checks.

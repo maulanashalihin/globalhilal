@@ -35,6 +35,7 @@ import {
 } from "../hijri";
 import { isValidTimezone, todayInTz } from "./hijri-api.routes";
 import type { AppEnv } from "../inertia-middleware";
+import type { Locale } from "../../shared/types";
 import { clientIp } from "../rate-limit";
 import { validateJson } from "../validation";
 
@@ -69,6 +70,33 @@ export const CONTRIBUTE_VALIDATION_MESSAGES: Record<string, string> = {
 	"/note": "Describe what you saw (at least a few words).",
 };
 
+/** Arabic field messages for the witness form (public page — see app.ts). */
+export const CONTRIBUTE_VALIDATION_MESSAGES_AR: Record<string, string> = {
+	"/monthKey": "اختر شهرًا من القائمة.",
+	"/country": "البلد مطلوب.",
+	"/sightedOn": "استخدم تاريخًا حقيقيًا بصيغة YYYY-MM-DD.",
+	"/reporterName": "أخبرنا باسمك.",
+	"/note": "صِف ما رأيته (بضع كلمات على الأقل).",
+};
+
+/** Handler-level messages for the witness form, per locale. */
+const CONTRIBUTE_ERRORS: Record<
+	Locale,
+	{ monthKey: string; sightedOn: string; duplicate: string }
+> = {
+	en: {
+		monthKey: "Pick a month from the list.",
+		sightedOn: "Use a real date YYYY-MM-DD.",
+		duplicate:
+			"You have already submitted a report today. Please try again tomorrow.",
+	},
+	ar: {
+		monthKey: "اختر شهرًا من القائمة.",
+		sightedOn: "استخدم تاريخًا حقيقيًا بصيغة YYYY-MM-DD.",
+		duplicate: "لقد أرسلت بلاغًا اليوم بالفعل. حاول مرة أخرى غدًا.",
+	},
+};
+
 export const hijriRoutes = () => {
 	const app = new Hono<AppEnv>();
 
@@ -77,7 +105,7 @@ export const hijriRoutes = () => {
 		const rawTz = c.req.query("tz") ?? "UTC";
 		const tz = isValidTimezone(rawTz) ? rawTz : "UTC";
 		const date = todayInTz(tz);
-		const today = await getTodayData(date, tz);
+		const today = await getTodayData(date, tz, c.var.locale);
 		return c.var.inertia.render(
 			"Today",
 			{ tz, today, tzFallback: tz !== rawTz ? rawTz : null },
@@ -133,6 +161,7 @@ export const hijriRoutes = () => {
 			row,
 			listSightingsByMonth.all(row.id),
 			listReferencesByMonth.all(row.id),
+			c.var.locale,
 		);
 		return c.var.inertia.render("MonthDetail", { detail }, { public: true });
 	});
@@ -151,6 +180,7 @@ export const hijriRoutes = () => {
 		const months = listPublicHijriMonthsDesc.all(4, 0).map((r) => ({
 			month_key: r.monthKey,
 			month_en: r.monthEn,
+			month_ar: r.monthAr,
 		}));
 		return c.var.inertia.render(
 			"Contribute",
@@ -160,13 +190,14 @@ export const hijriRoutes = () => {
 	});
 	app.post("/contribute", validateJson(reportBody), (c) => {
 		const page = c.var.inertia;
+		const errors = CONTRIBUTE_ERRORS[c.var.locale];
 		const body = c.req.valid("json") as ReportBody;
 		const parsed = parseMonthKey(body.monthKey);
 		if (!parsed) {
-			return page.error("Contribute", { monthKey: "Pick a month from the list." });
+			return page.error("Contribute", { monthKey: errors.monthKey });
 		}
 		if (!isValidGregorianDate(body.sightedOn)) {
-			return page.error("Contribute", { sightedOn: "Use a real date YYYY-MM-DD." });
+			return page.error("Contribute", { sightedOn: errors.sightedOn });
 		}
 		const key = monthKey(parsed.year, parsed.month);
 		const hash = createHash("sha256").update(clientIp(c)).digest("hex");
@@ -187,9 +218,7 @@ export const hijriRoutes = () => {
 		} catch {
 			// UNIQUE(ip_hash, day) — second submission from this IP today.
 			// 422 (not 429) so Inertia populates the form error reliably.
-			return page.error("Contribute", {
-				note: "You have already submitted a report today. Please try again tomorrow.",
-			});
+			return page.error("Contribute", { note: errors.duplicate });
 		}
 		return page.redirect("/contribute?submitted=1");
 	});
@@ -207,8 +236,8 @@ export const hijriRoutes = () => {
 };
 
 /** Re-exported for pages.routes.ts `/` (owned by the app shell). */
-export async function homeProps() {
+export async function homeProps(locale: Locale = "en") {
 	const date = utcToday();
-	const today = await getTodayData(date, "UTC");
+	const today = await getTodayData(date, "UTC", locale);
 	return { today };
 }

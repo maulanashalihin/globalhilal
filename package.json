@@ -20,6 +20,7 @@
     "build": "bun run scripts/build.ts",
     "start": "NODE_ENV=production bun run src/index.ts",
     "db:seed": "bun run scripts/seed.ts",
+    "db:seed-ar": "bun run scripts/seed-ar.ts",
     "typecheck": "svelte-check --tsconfig ./tsconfig.json",
     "lint": "biome lint src tests scripts create-dulak",
     "test": "bun test --isolate"

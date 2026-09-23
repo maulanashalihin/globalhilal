@@ -50,3 +50,12 @@
 		outline-offset: 2px;
 	}
 }
+
+/* --- Arabic typography ----------------------------------------------------
+   Arabic script is cursive: letter-spacing visually breaks the joins.
+   Neutralise the tracking-* utilities on AR pages in one place. Written
+   unlayered on purpose — unlayered CSS beats Tailwind's utilities layer. */
+[lang="ar"],
+[lang="ar"] * {
+	letter-spacing: normal;
+}

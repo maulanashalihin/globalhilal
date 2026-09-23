@@ -173,6 +173,7 @@ describe("hijri DB statements", () => {
 			30,
 			"confirmed",
 			"Crescent sighted; new month declared globally.",
+			"رُئي الهلال؛ أُعلن الشهر عالميًا.",
 			null,
 			new Date().toISOString(),
 		)!;
@@ -180,6 +181,7 @@ describe("hijri DB statements", () => {
 		const found = dbm.findHijriMonthByKey.get("1447-09")!;
 		expect(found.monthEn).toBe("Ramadan");
 		expect(found.lengthDays).toBe(30);
+		expect(found.decisionSummaryAr).toContain("رُئي");
 	});
 
 	it("stores sightings and references per month", () => {
@@ -196,6 +198,7 @@ describe("hijri DB statements", () => {
 			"Tumair committee",
 			1,
 			"Testimony received and verified.",
+			"وصلت الشهادة وتم التحقق منها.",
 		)!;
 		expect(s.id).toBeGreaterThan(0);
 		expect(dbm.listSightingsByMonth.all(m.id)).toHaveLength(1);
@@ -203,10 +206,12 @@ describe("hijri DB statements", () => {
 		const r = dbm.insertMonthReference.get(
 			m.id,
 			"SPA announcement",
+			"إعلان وكالة الأنباء السعودية",
 			"Saudi Press Agency",
 			"https://example.org/spa-1447-09",
 			"2026-02-17",
 			"Crescent observed.",
+			"رُئي الهلال.",
 			"official",
 		)!;
 		expect(r.id).toBeGreaterThan(0);

@@ -2,33 +2,39 @@
   import { Link, usePage } from '@inertiajs/svelte'
   import type { Snippet } from 'svelte'
   import Brand from './Brand.svelte'
-  import { session } from '../session'
+  import { dict } from '../i18n'
+  import type { Locale, SharedPageProps } from '../../shared/types'
 
   let { children }: { children: Snippet } = $props()
 
-  const page = usePage()
+  const page = usePage<SharedPageProps>()
   const url = $derived(page.url)
   const currentPath = $derived(url?.split('?')[0] ?? '')
-  const { user, loading } = $derived($session)
 
-  const NAV = [
-    { href: '/today', label: 'Today' },
-    { href: '/calendar', label: 'Calendar' },
-    { href: '/contribute', label: 'Contribute' },
-    { href: '/methodology', label: 'Methodology' },
-    { href: '/sources', label: 'Sources' },
-    { href: '/docs', label: 'API Docs' },
-  ]
+  const locale = $derived((page.props.locale ?? 'en') as Locale)
+  const t = $derived(dict(locale))
+  const isAr = $derived(locale === 'ar')
+
+  const NAV = $derived([
+    { href: '/today', label: t.nav.today },
+    { href: '/calendar', label: t.nav.calendar },
+    { href: '/contribute', label: t.nav.contribute },
+    { href: '/methodology', label: t.nav.methodology },
+    { href: '/sources', label: t.nav.sources },
+    { href: '/docs', label: t.nav.docs },
+  ])
 
   const isActive = (href: string) =>
     href === '/today' ? currentPath === '/' || currentPath === '/today' : currentPath.startsWith(href)
 </script>
 
-<div class="min-h-screen bg-gh-sky text-gh-ink font-display flex flex-col antialiased">
+<div
+  class={`min-h-screen bg-gh-sky text-gh-ink flex flex-col antialiased ${isAr ? 'font-arabic' : 'font-display'}`}
+>
   <header class="sticky top-0 z-30 border-b border-gh-line bg-gh-sky/90 backdrop-blur">
     <div class="w-full max-w-[1020px] mx-auto px-4 py-3 flex items-center gap-5 flex-wrap">
       <Brand href="/" class="text-[1.05rem]" />
-      <nav class="flex items-center gap-1 flex-wrap" aria-label="Primary">
+      <nav class="flex items-center gap-1 flex-wrap" aria-label={t.nav.aria}>
         {#each NAV as item (item.href)}
           {@const active = isActive(item.href)}
           <Link
@@ -40,18 +46,26 @@
           </Link>
         {/each}
       </nav>
-      <div class="ml-auto text-sm">
-        {#if !loading}
-          {#if user}
-            <Link href="/dashboard" class="font-semibold text-gh-gold">
-              Dashboard
-            </Link>
-          {:else}
-            <Link href="/login" class="font-semibold text-gh-gold">
-              Sign in
-            </Link>
-          {/if}
-        {/if}
+      <div class="ms-auto flex items-center gap-3 text-sm">
+        <form method="post" action="/locale" class="flex items-center">
+          <input type="hidden" name="redirectTo" value={url ?? '/'} />
+          <label class="sr-only" for="locale-select">{t.header.language}</label>
+          <select
+            id="locale-select"
+            name="locale"
+            value={locale}
+            class="h-8 ps-2 pe-6 border border-gh-line rounded-md bg-gh-sky text-gh-ink text-sm cursor-pointer"
+            onchange={(e) => e.currentTarget.form?.submit()}
+          >
+            <option value="en">English</option>
+            <option value="ar">العربية</option>
+          </select>
+          <noscript>
+            <button type="submit" class="ms-1 h-8 px-2 border border-gh-line rounded-md bg-gh-panel text-gh-ink text-sm cursor-pointer">
+              OK
+            </button>
+          </noscript>
+        </form>
       </div>
     </div>
   </header>
@@ -65,24 +79,23 @@
       <div>
         <p class="m-0 mb-1 font-bold">GlobalHilal</p>
         <p class="m-0 text-sm text-gh-soft max-w-[38ch]">
-          One valid crescent sighting anywhere starts the month for all.
-          Testimony-based, never predicted.
+          {t.footer.tagline}
         </p>
       </div>
-      <nav aria-label="Site">
-        <p class="m-0 mb-2 text-xs font-bold uppercase tracking-widest text-gh-soft">Site</p>
+      <nav aria-label={t.footer.site}>
+        <p class="m-0 mb-2 text-xs font-bold uppercase tracking-widest text-gh-soft">{t.footer.site}</p>
         <ul class="m-0 p-0 list-none flex flex-col gap-1.5 text-sm">
-          <li><Link href="/today">Today's date</Link></li>
-          <li><Link href="/calendar">Calendar</Link></li>
-          <li><Link href="/methodology">Methodology</Link></li>
+          <li><Link href="/today">{t.footer.todayDate}</Link></li>
+          <li><Link href="/calendar">{t.footer.calendar}</Link></li>
+          <li><Link href="/methodology">{t.footer.methodology}</Link></li>
         </ul>
       </nav>
       <div>
-        <p class="m-0 mb-2 text-xs font-bold uppercase tracking-widest text-gh-soft">Developers</p>
+        <p class="m-0 mb-2 text-xs font-bold uppercase tracking-widest text-gh-soft">{t.footer.developers}</p>
         <ul class="m-0 p-0 list-none flex flex-col gap-1.5 text-sm">
-          <li><Link href="/docs">Free API</Link></li>
-          <li><Link href="/sources">Sources</Link></li>
-          <li><Link href="/contribute">Report a sighting</Link></li>
+          <li><Link href="/docs">{t.footer.freeApi}</Link></li>
+          <li><Link href="/sources">{t.footer.sources}</Link></li>
+          <li><Link href="/contribute">{t.footer.reportSighting}</Link></li>
         </ul>
       </div>
     </div>

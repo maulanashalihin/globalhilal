@@ -1,16 +1,27 @@
 <script lang="ts">
-  import { Link } from '@inertiajs/svelte'
+  import { Link, usePage } from '@inertiajs/svelte'
   import Crescent from '../components/Crescent.svelte'
   import PublicLayout from '../components/PublicLayout.svelte'
   import Stars from '../components/Stars.svelte'
   import StatusBadge from '../components/StatusBadge.svelte'
-  import type { TodayData } from '../../shared/types'
+  import { dict, fmtDate, fmtNum, placeLabel } from '../i18n'
+  import type { Locale, SharedPageProps, TodayData } from '../../shared/types'
 
   let { today }: { today: TodayData | null } = $props()
 
+  const page = usePage<SharedPageProps>()
+  const locale = $derived((page.props.locale ?? 'en') as Locale)
+  const t = $derived(dict(locale))
+  const isAr = $derived(locale === 'ar')
+
+  // Arabic pages lead with the Arabic month name; English pages with the
+  // English one. The other name stays visible as a cross-reference.
+  const monthPrimary = $derived(today ? (isAr ? today.hijri.month_ar : today.hijri.month_en) : '')
+  const monthSecondary = $derived(today ? (isAr ? today.hijri.month_en : today.hijri.month_ar) : '')
+
   const title = $derived(
     today
-      ? `${today.hijri.day} ${today.hijri.month_en} ${today.hijri.year} — GlobalHilal`
+      ? `${fmtNum(today.hijri.day, locale)} ${monthPrimary} ${fmtNum(today.hijri.year, locale)} — GlobalHilal`
       : 'GlobalHilal — Global moon-sighting Hijri calendar',
   )
   const canonical = 'https://globalhilal.org/'
@@ -18,10 +29,7 @@
 
 <svelte:head>
   <title>{title}</title>
-  <meta
-    name="description"
-    content="Today's Hijri date by global moon-sighting testimony. One valid sighting anywhere starts the month for all."
-  />
+  <meta name="description" content={t.meta.homeDescription} />
   <link rel="canonical" href={canonical} />
   <meta property="og:title" content={title} />
   <meta property="og:type" content="website" />
@@ -38,18 +46,22 @@
         <div class="text-[#e3b93e] shrink-0 mx-auto md:mx-0">
           <Crescent day={today.hijri.day} size={168} id="home-moon" />
         </div>
-        <div class="min-w-[240px] flex-1 text-center md:text-left">
+        <div class="min-w-[240px] flex-1 text-center md:text-start">
           <p class="m-0 mb-3 text-[0.72rem] font-bold uppercase tracking-[0.2em] text-[#e3b93e]">
-            {today.gregorian.date} · day {today.hijri.day} of the month
+            {t.home.kicker(fmtDate(today.gregorian.date, locale), fmtNum(today.hijri.day, locale))}
           </p>
           <p class="m-0 font-bold leading-none tracking-tight tabular-nums text-[3.4rem] md:text-[4.6rem]">
-            {today.hijri.day} {today.hijri.month_en}
+            {fmtNum(today.hijri.day, locale)} {monthPrimary}
           </p>
-          <p class="m-0 mt-2 font-arabic text-[1.7rem] leading-snug" lang="ar" dir="rtl">
-            {today.hijri.month_ar} {today.hijri.year}
+          <p
+            class={`m-0 mt-2 text-[1.7rem] leading-snug ${isAr ? '' : 'font-arabic'}`}
+            lang={isAr ? 'en' : 'ar'}
+            dir={isAr ? 'ltr' : 'rtl'}
+          >
+            {monthSecondary} {fmtNum(today.hijri.year, locale)}
           </p>
           <p class="mt-4 mb-0">
-            <StatusBadge status={today.determination.status} />
+            <StatusBadge status={today.determination.status} {locale} />
           </p>
         </div>
       </div>
@@ -57,14 +69,14 @@
 
     {#if today.warning}
       <p class="px-4 py-3 mt-4 text-sm font-medium rounded-md border border-gh-gold bg-gh-gold-soft text-gh-gold">
-        {today.warning}
+        {t.warnings.provisional}
       </p>
     {/if}
 
     <section class="mt-8 grid gap-8 md:grid-cols-[1.5fr_1fr]">
       <div>
         <p class="m-0 mb-2 text-[0.72rem] font-bold uppercase tracking-[0.2em] text-gh-gold">
-          The evidence
+          {t.home.evidence}
         </p>
         <p class="m-0 mb-4 text-[1.05rem] leading-relaxed">
           {today.determination.decision_summary}
@@ -77,33 +89,32 @@
                   <path d="M8 14s5-4.6 5-8a5 5 0 1 0-10 0c0 3.4 5 8 5 8Z" />
                   <circle cx="8" cy="6" r="1.8" />
                 </svg>
-                <span><strong>Sighted in {place}</strong> — testimony received and verified.</span>
+                <span><strong>{t.home.sightedIn(placeLabel(place, locale))}</strong>{t.home.sightedInNote}</span>
               </li>
             {/each}
           </ul>
         {/if}
         <p class="m-0 text-sm">
           <Link href={`/hijri/${today.hijri.month_key}`} class="font-semibold">
-            Read the full ruling, testimonies and references
+            {t.common.readRuling}
           </Link>
         </p>
       </div>
-      <aside class="border-l-4 border-gh-gold bg-gh-panel rounded-r-md p-5 h-fit">
+      <aside class="border-s-4 border-gh-gold bg-gh-panel rounded-e-md p-5 h-fit">
         <p class="m-0 mb-1 text-[0.72rem] font-bold uppercase tracking-[0.2em] text-gh-gold">
-          Next moon watching
+          {t.common.nextWatching}
         </p>
-        <p class="m-0 mb-1 text-[1.5rem] font-bold tabular-nums">{today.next_observation_date}</p>
+        <p class="m-0 mb-1 text-[1.5rem] font-bold tabular-nums">{fmtDate(today.next_observation_date, locale)}</p>
         <p class="m-0 text-sm text-gh-soft">
-          On the 29th evening the ummah looks up. One valid sighting
-          anywhere opens the new month for everyone.
+          {t.home.nextWatchingNote}
         </p>
       </aside>
     </section>
 
     <section class="mt-10 border-t border-gh-line pt-6 flex gap-4 items-baseline flex-wrap">
       <p class="m-0 text-sm text-gh-soft">
-        Building a prayer timetable or a masjid display? Take the date from the free API —
-        <Link href="/docs" class="font-semibold">read the docs</Link>.
+        {t.home.apiCta}
+        <Link href="/docs" class="font-semibold">{t.home.apiCtaLink}</Link>.
       </p>
     </section>
   {:else}
@@ -113,8 +124,7 @@
       </div>
       <h1 class="relative m-0 mb-3 tracking-tight text-[2.4rem] font-bold">GlobalHilal</h1>
       <p class="relative m-0 text-[#e3b93e]">
-        No moon-sighting determinations published yet. Check back after the
-        next observation evening.
+        {t.home.empty}
       </p>
     </section>
   {/if}

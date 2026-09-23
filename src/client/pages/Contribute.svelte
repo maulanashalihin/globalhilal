@@ -1,8 +1,14 @@
 <script lang="ts">
-  import { Link, useForm } from '@inertiajs/svelte'
+  import { Link, useForm, usePage } from '@inertiajs/svelte'
   import PublicLayout from '../components/PublicLayout.svelte'
+  import { dict } from '../i18n'
+  import type { Locale, SharedPageProps } from '../../shared/types'
 
-  let { months, submitted }: { months: { month_key: string; month_en: string }[]; submitted: boolean } = $props()
+  let { months, submitted }: { months: { month_key: string; month_en: string; month_ar: string }[]; submitted: boolean } = $props()
+
+  const page = usePage<SharedPageProps>()
+  const locale = $derived((page.props.locale ?? 'en') as Locale)
+  const t = $derived(dict(locale))
 
   const form = useForm({
     monthKey: months[0]?.month_key ?? '',
@@ -33,90 +39,85 @@
 </script>
 
 <svelte:head>
-  <title>Report a moon sighting — GlobalHilal</title>
-  <meta
-    name="description"
-    content="Saw the crescent? Send your moon-sighting testimony to GlobalHilal. Editors verify every report before it counts."
-  />
+  <title>{t.contribute.title} — GlobalHilal</title>
+  <meta name="description" content={t.meta.contributeDescription} />
   <link rel="canonical" href="https://globalhilal.org/contribute" />
 </svelte:head>
 
 <PublicLayout>
-  <p class="m-0 mb-1 text-[0.72rem] font-bold uppercase tracking-[0.2em] text-gh-gold">Contribute</p>
-  <h1 class="m-0 mb-3 tracking-tight text-[2rem] font-bold max-w-[22ch]">Saw the crescent? Tell the ummah.</h1>
+  <p class="m-0 mb-1 text-[0.72rem] font-bold uppercase tracking-[0.2em] text-gh-gold">{t.contribute.kicker}</p>
+  <h1 class="m-0 mb-3 tracking-tight text-[2rem] font-bold max-w-[22ch]">{t.contribute.h1}</h1>
   <p class="mt-0 mb-8 text-gh-soft max-w-[62ch]">
-    One valid testimony anywhere opens the month for everyone — yours could
-    be the one. Editors verify every report before it counts, and
-    needless details stay private. One report per person per day.
+    {t.contribute.intro}
   </p>
 
   {#if submitted}
     <p class="px-4 py-3 mb-6 text-sm font-medium rounded-md border border-green-200 bg-green-50 text-green-700 dark:bg-green-950 dark:text-green-300 dark:border-green-800">
-      Jazakum Allahu khayran — your report was received and is awaiting editor review.
+      {t.contribute.success}
     </p>
   {/if}
 
   <form onsubmit={submit} novalidate class="grid gap-4 max-w-[640px]">
     <div class="grid grid-cols-2 gap-3 max-md:grid-cols-1">
       <label class={labelClass}>
-        Month observed
+        {t.contribute.month}
         <select bind:value={form.monthKey} onchange={() => form.clearErrors('monthKey')} class={inputClass}>
           {#each months as m (m.month_key)}
-            <option value={m.month_key}>{m.month_en} ({m.month_key})</option>
+            <option value={m.month_key}>{locale === 'ar' ? m.month_ar : m.month_en} ({m.month_key})</option>
           {/each}
         </select>
         {#if form.errors.monthKey}<p class={errClass}>{form.errors.monthKey}</p>{/if}
       </label>
       <label class={labelClass}>
-        Evening observed
+        {t.contribute.evening}
         <input type="date" bind:value={form.sightedOn} onchange={() => form.clearErrors('sightedOn')} class={inputClass} />
         {#if form.errors.sightedOn}<p class={errClass}>{form.errors.sightedOn}</p>{/if}
       </label>
     </div>
     <div class="grid grid-cols-2 gap-3 max-md:grid-cols-1">
       <label class={labelClass}>
-        Country
+        {t.contribute.country}
         <input type="text" bind:value={form.country} onchange={() => form.clearErrors('country')} class={inputClass} />
         {#if form.errors.country}<p class={errClass}>{form.errors.country}</p>{/if}
       </label>
       <label class={labelClass}>
-        City (optional)
+        {t.contribute.city}
         <input type="text" bind:value={form.city} class={inputClass} />
       </label>
     </div>
     <div class="grid grid-cols-2 gap-3 max-md:grid-cols-1">
       <label class={labelClass}>
-        Result
+        {t.contribute.result}
         <select bind:value={form.result} class={inputClass}>
-          <option value="seen">Crescent seen</option>
-          <option value="not_seen">Looked, not seen</option>
-          <option value="cloudy">Cloudy — could not observe</option>
+          <option value="seen">{t.contribute.resultOptions.seen}</option>
+          <option value="not_seen">{t.contribute.resultOptions.not_seen}</option>
+          <option value="cloudy">{t.contribute.resultOptions.cloudy}</option>
         </select>
       </label>
       <label class={labelClass}>
-        Method
+        {t.contribute.method}
         <select bind:value={form.method} class={inputClass}>
-          <option value="naked_eye">Naked eye</option>
-          <option value="telescope">Telescope / binoculars</option>
-          <option value="both">Both</option>
-          <option value="unknown">Unknown</option>
+          <option value="naked_eye">{t.contribute.methodOptions.naked_eye}</option>
+          <option value="telescope">{t.contribute.methodOptions.telescope}</option>
+          <option value="both">{t.contribute.methodOptions.both}</option>
+          <option value="unknown">{t.contribute.methodOptions.unknown}</option>
         </select>
       </label>
     </div>
     <div class="grid grid-cols-2 gap-3 max-md:grid-cols-1">
       <label class={labelClass}>
-        Your name
+        {t.contribute.name}
         <input type="text" bind:value={form.reporterName} onchange={() => form.clearErrors('reporterName')} class={inputClass} />
         {#if form.errors.reporterName}<p class={errClass}>{form.errors.reporterName}</p>{/if}
       </label>
       <label class={labelClass}>
-        Contact for follow-up (optional)
-        <input type="text" placeholder="Email or phone" bind:value={form.contact} class={inputClass} />
+        {t.contribute.contact}
+        <input type="text" placeholder={t.contribute.contactPlaceholder} bind:value={form.contact} class={inputClass} />
       </label>
     </div>
     <label class={labelClass}>
-      What did you see?
-      <textarea rows="4" placeholder="Time after sunset, sky conditions, witnesses with you…" bind:value={form.note} onchange={() => form.clearErrors('note')} class={inputClass}></textarea>
+      {t.contribute.note}
+      <textarea rows="4" placeholder={t.contribute.notePlaceholder} bind:value={form.note} onchange={() => form.clearErrors('note')} class={inputClass}></textarea>
       {#if form.errors.note}<p class={errClass}>{form.errors.note}</p>{/if}
     </label>
     <div>
@@ -125,11 +126,11 @@
         class="inline-flex items-center justify-center px-5 py-2.5 border border-gh-ink rounded-md bg-gh-ink text-gh-sky font-semibold text-sm cursor-pointer transition-colors hover:opacity-85 hover:no-underline disabled:opacity-60 disabled:cursor-not-allowed"
         disabled={form.processing}
       >
-        {form.processing ? 'Sending…' : 'Submit testimony'}
+        {form.processing ? t.contribute.sending : t.contribute.submit}
       </button>
     </div>
     <p class="m-0 text-sm text-gh-soft">
-      Read <Link href="/methodology" class="font-semibold">how rulings are made</Link> before reporting.
+      {t.contribute.readMethodologyLead}<Link href="/methodology" class="font-semibold">{t.contribute.readMethodologyLink}</Link>{t.contribute.readMethodologyTail}
     </p>
   </form>
 </PublicLayout>

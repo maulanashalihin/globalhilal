@@ -23,7 +23,7 @@ beforeAll(async () => {
 
 	dbm.insertHijriMonth.get(
 		"1448-04", 1448, 4, "Rabi' al-Thani", "ربيع الثاني",
-		"2026-09-13", null, null, "confirmed", "Seeded.", null, new Date().toISOString(),
+		"2026-09-13", null, null, "confirmed", "Seeded.", "", null, new Date().toISOString(),
 	);
 
 	const { hashPassword } = await import("../src/server/auth");

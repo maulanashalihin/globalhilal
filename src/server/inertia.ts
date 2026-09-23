@@ -13,9 +13,10 @@
  * here is Hono-specific beyond the type names.
  */
 import type { Page } from "@inertiajs/core";
-import type { FlashData, SharedPageProps } from "../shared/types";
+import type { FlashData, Locale, SharedPageProps } from "../shared/types";
 import { config } from "./config";
 import { clearFlash } from "./auth";
+import { isRtl } from "./locale";
 
 // Dynamic import of the SSR renderer — allows dev hot-reload to invalidate
 // Bun's module cache (see client-watcher.ts). In production this resolves
@@ -56,6 +57,8 @@ export interface InertiaContext {
 	sessionToken: string | null;
 	/** Per-request CSP nonce for inline scripts/styles. */
 	cspNonce: string;
+	/** Resolved request locale — exposed as a shared prop, drives `lang`/`dir`. */
+	locale: Locale;
 }
 
 const splitList = (value: string | undefined): string[] | undefined =>
@@ -129,6 +132,9 @@ export class Inertia {
 		}
 		const { errors: flashErrors, ...flash } = this.c.flash;
 		const sharedProps: Record<string, unknown> = {
+			// Public pages pick this up (CDN variants are keyed per locale at
+			// the edge). Auth/admin pages receive it too but render English.
+			locale: this.c.locale,
 			...pageProps,
 			errors: errors ?? flashErrors ?? {},
 		};
@@ -163,6 +169,9 @@ export class Inertia {
 		options: { status?: number; public?: boolean } = {},
 	): Promise<Response> {
 		const page = this.page(component, props, undefined, options.public);
+		// The shell `lang`/`dir` follows the request locale on public pages.
+		// Auth/admin chrome is English, so those always ship `lang="en"`.
+		const shellLocale: Locale = options.public ? this.c.locale : "en";
 
 		if (this.isXhr) {
 			if (!this.versionMatches) return this.locationVisit();
@@ -181,7 +190,7 @@ export class Inertia {
 			body = this.clientBody(page);
 		}
 		if (!options.public) clearFlash(this.c.sessionToken);
-		return this.html(head, body, options.status ?? 200);
+		return this.html(head, body, options.status ?? 200, shellLocale);
 	}
 	/**
 	 * Non-SSR body: the Inertia v3 page payload inlined as JSON in a
@@ -241,7 +250,12 @@ export class Inertia {
 			},
 		});
 	}
-	private html(head: string[], body: string, status: number): Response {
+	private html(
+		head: string[],
+		body: string,
+		status: number,
+		locale: Locale,
+	): Response {
 		const headTags = head.filter((h) => h && h.trim().length > 0);
 		const hasTitle = headTags.some((h) => h.includes("<title"));
 		const titleTag = hasTitle ? "" : "<title>Dulak</title>";
@@ -256,7 +270,7 @@ export class Inertia {
 		// Reads localStorage('theme'), falls back to prefers-color-scheme, defaults light.
 		const themeBoot = `<script nonce="${this.c.cspNonce}">(function(){try{var t=localStorage.getItem('theme');if(t!=='light'&&t!=='dark'){t=window.matchMedia('(prefers-color-scheme: dark)').matches?'dark':'light';}var el=document.documentElement;el.setAttribute('data-theme',t);el.style.backgroundColor=t==='dark'?'#0f1117':'#f6f7fb';}catch(e){document.documentElement.setAttribute('data-theme','light');}})();</script>`;
 		const doc = `<!DOCTYPE html>
-<html lang="en">
+<html lang="${locale}" dir="${isRtl(locale) ? "rtl" : "ltr"}">
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />

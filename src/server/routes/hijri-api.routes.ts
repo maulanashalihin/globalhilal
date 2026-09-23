@@ -83,6 +83,7 @@ function toMonth(row: HijriMonthRow): HijriMonth {
 		lengthDays: row.lengthDays,
 		status: row.status as HijriStatus,
 		decisionSummaryEn: row.decisionSummaryEn,
+		decisionSummaryAr: row.decisionSummaryAr,
 		publishedAt: row.publishedAt,
 		updatedAt: row.updatedAt,
 	};

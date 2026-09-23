@@ -40,16 +40,27 @@ import type { AppEnv } from "./inertia-middleware";
  * successful HTML responses (status 200, non-XHR). Inertia XHR responses
  * are skipped — they are small and cached separately via the `_spa` query
  * param the client adds.
+ *
+ * Locale headers are set on every 200 response (HTML *and* XHR JSON, since
+ * Cloudflare caches `_spa=1` payloads too): `Content-Language` names the
+ * rendered locale and `Vary` documents the inputs the origin used. Note that
+ * Cloudflare ignores `Vary` for its own cache key — the edge cache key must
+ * be configured to include `CF-IPCountry` and the `gh_locale` cookie (see
+ * README "Localization").
  */
 export const cacheablePublic =
 	(sMaxAge: number, swr: number) =>
 	async (c: Context<AppEnv>, next: Next) => {
 		await next();
-		if (c.res.status === 200 && !c.req.header("x-inertia")) {
-			c.res.headers.set(
-				"Cache-Control",
-				`public, s-maxage=${sMaxAge}, stale-while-revalidate=${swr}`,
-			);
+		if (c.res.status === 200) {
+			c.res.headers.set("Content-Language", c.get("locale"));
+			c.res.headers.set("Vary", "CF-IPCountry, Cookie, Accept-Language");
+			if (!c.req.header("x-inertia")) {
+				c.res.headers.set(
+					"Cache-Control",
+					`public, s-maxage=${sMaxAge}, stale-while-revalidate=${swr}`,
+				);
+			}
 		}
 	};
 

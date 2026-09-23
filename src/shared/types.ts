@@ -6,6 +6,9 @@
 
 export type Role = "user" | "admin";
 
+/** UI locale: Arabic for Arab-League countries (or explicit choice), else English. */
+export type Locale = "ar" | "en";
+
 export interface User {
 	id: number;
 	name: string;
@@ -31,6 +34,8 @@ export interface SharedPageProps {
 	[key: string]: unknown;
 	auth: { user: User | null };
 	errors: Record<string, string>;
+	/** Resolved request locale (server-side resolution, see `server/locale.ts`). */
+	locale: Locale;
 }
 
 /** Props for the dashboard page. */
@@ -73,6 +78,8 @@ export interface HijriMonth {
 	lengthDays: 29 | 30 | null;
 	status: HijriStatus;
 	decisionSummaryEn: string;
+	/** Arabic translation; empty string = fall back to English. */
+	decisionSummaryAr: string;
 	publishedAt: string | null;
 	updatedAt: string;
 }
@@ -94,6 +101,8 @@ export interface SightingReport {
 	witnessOrg: string | null;
 	verified: boolean;
 	noteEn: string;
+	/** Arabic translation; empty string = fall back to English. */
+	noteAr: string;
 }
 
 export type ReferenceKind = "official" | "news" | "org" | "other";
@@ -103,10 +112,14 @@ export interface MonthReference {
 	id: number;
 	monthId: number;
 	titleEn: string;
+	/** Arabic translation; empty string = fall back to English. */
+	titleAr: string;
 	publisher: string;
 	url: string;
 	publishedAt: string | null;
 	quoteEn: string;
+	/** Arabic translation; empty string = fall back to English. */
+	quoteAr: string;
 	kind: ReferenceKind;
 }
 

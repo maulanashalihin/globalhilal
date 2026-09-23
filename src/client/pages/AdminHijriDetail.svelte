@@ -1,19 +1,26 @@
 <script lang="ts">
   import { Link, router, useForm } from '@inertiajs/svelte'
   import Layout from '../components/Layout.svelte'
+  import LangTabs from '../components/LangTabs.svelte'
   import type { MonthDetailJson } from '../../shared/types'
 
-  type AdminSighting = MonthDetailJson['sightings'][number] & { id: number }
-  type AdminReference = MonthDetailJson['references'][number] & { id: number }
+  type AdminSighting = MonthDetailJson['sightings'][number] & { id: number; note_ar: string }
+  type AdminReference = MonthDetailJson['references'][number] & { id: number; title_ar: string; quote_ar: string }
   type AdminDetail = Omit<MonthDetailJson, 'sightings' | 'references'> & {
+    month: MonthDetailJson['month'] & { decision_summary_ar: string }
     sightings: AdminSighting[]
     references: AdminReference[]
   }
 
-  let { id, detail, nextKey, expectedEnd }: { id: number; detail: AdminDetail; nextKey: string | null; expectedEnd: string | null } = $props()
+  let { id, detail, arHints, nextKey, expectedEnd }: { id: number; detail: AdminDetail; arHints: string[]; nextKey: string | null; expectedEnd: string | null } = $props()
 
   const m = $derived(detail.month)
   const hasTestimony = $derived(detail.sightings.some((s) => s.result === 'seen' && s.verified))
+
+  type Lang = 'en' | 'ar'
+  let detLang = $state<Lang>('en')
+  let sightLang = $state<Lang>('en')
+  let refLang = $state<Lang>('en')
 
   const edit = useForm(`EditMonth:${id}`, {
     startGregorian: m.start_gregorian,
@@ -21,6 +28,7 @@
     lengthDays: m.length_days === null ? '' : String(m.length_days),
     status: m.status,
     decisionSummaryEn: m.decision_summary,
+    decisionSummaryAr: m.decision_summary_ar,
   })
   edit.transform((data) => ({
     ...data,
@@ -42,6 +50,7 @@
     witnessOrg: '',
     verified: false,
     noteEn: '',
+    noteAr: '',
   })
 
   function submitSighting(e: SubmitEvent) {
@@ -58,10 +67,12 @@
 
   const ref = useForm({
     titleEn: '',
+    titleAr: '',
     publisher: '',
     url: 'https://',
     publishedAt: '',
     quoteEn: '',
+    quoteAr: '',
     kind: 'official',
   })
 
@@ -72,6 +83,28 @@
       onSuccess: () => ref.reset(),
     })
   }
+
+  const detMissingAr = $derived(edit.decisionSummaryEn.trim() !== '' && edit.decisionSummaryAr.trim() === '')
+  const sightMissingAr = $derived(sight.noteEn.trim() !== '' && sight.noteAr.trim() === '')
+  const refMissingAr = $derived(
+    (ref.titleEn.trim() !== '' && ref.titleAr.trim() === '') ||
+      (ref.quoteEn.trim() !== '' && ref.quoteAr.trim() === ''),
+  )
+
+  $effect(() => {
+    if (edit.errors.decisionSummaryAr) detLang = 'ar'
+    else if (edit.errors.decisionSummaryEn) detLang = 'en'
+  })
+  $effect(() => {
+    if (sight.errors.noteAr) sightLang = 'ar'
+    else if (sight.errors.noteEn) sightLang = 'en'
+  })
+  $effect(() => {
+    const arErr = ref.errors.titleAr || ref.errors.quoteAr
+    const enErr = ref.errors.titleEn || ref.errors.quoteEn
+    if (arErr && !enErr) refLang = 'ar'
+    else if (enErr && !arErr) refLang = 'en'
+  })
 
   function remove(url: string, label: string, e: MouseEvent) {
     e.preventDefault()
@@ -105,6 +138,12 @@
   {#if !hasTestimony}
     <p class="px-4 py-3 mb-6 text-sm font-medium rounded-lg border border-amber-200 bg-amber-50 text-amber-800 dark:bg-amber-950 dark:text-amber-300 dark:border-amber-800">
       No verified sighting recorded — this month can only stay a draft until testimony is added below.
+    </p>
+  {/if}
+  {#if arHints.length > 0}
+    <p class="px-4 py-3 mb-6 text-sm font-medium rounded-lg border border-gh-gold bg-gh-gold-soft text-gh-gold">
+      Arabic translation missing ({arHints.join(', ')}) — Arabic readers will see the
+      English text. Publishing is not blocked; add the translation when you can.
     </p>
   {/if}
 
@@ -141,10 +180,24 @@
         </select>
         {#if edit.errors.status}<p class={errClass}>{edit.errors.status}</p>{/if}
       </label>
-      <label class={labelClass}>
-        Decision summary (English, 2–5 sentences: where, when, who testified, why global)
-        <textarea rows="4" bind:value={edit.decisionSummaryEn} class={inputClass}></textarea>
-      </label>
+      <div class="flex items-center justify-between gap-3 flex-wrap">
+        <span class="text-sm font-medium">Decision summary</span>
+        <LangTabs bind:value={detLang} missingAr={detMissingAr} label="Decision summary language" />
+      </div>
+      <p class="text-xs text-gh-soft m-0 -mt-2">2–5 sentences: where, when, who testified, why global. Empty Arabic falls back to English.</p>
+      {#if detLang === 'en'}
+        <label class={labelClass}>
+          English
+          <textarea rows="4" bind:value={edit.decisionSummaryEn} onchange={() => edit.clearErrors('decisionSummaryEn')} class={inputClass}></textarea>
+          {#if edit.errors.decisionSummaryEn}<p class={errClass}>{edit.errors.decisionSummaryEn}</p>{/if}
+        </label>
+      {:else}
+        <label class={labelClass}>
+          العربية — optional
+          <textarea rows="4" dir="rtl" lang="ar" bind:value={edit.decisionSummaryAr} onchange={() => edit.clearErrors('decisionSummaryAr')} class={inputClass} placeholder="Leave empty to show English"></textarea>
+          {#if edit.errors.decisionSummaryAr}<p class={errClass}>{edit.errors.decisionSummaryAr}</p>{/if}
+        </label>
+      {/if}
       <div>
         <button type="submit" class={btnPrimary} disabled={edit.processing}>
           {edit.processing ? 'Saving…' : 'Save determination'}
@@ -155,7 +208,8 @@
 
   <div class="grid gap-6 md:grid-cols-2 items-start">
     <section class="bg-gh-panel border border-gh-line rounded-lg p-6">
-      <h2 class="text-[1.1rem] m-0 mb-4">Testimonies ({detail.sightings.length})</h2>
+      <h2 class="text-[1.1rem] m-0 mb-1">Testimonies ({detail.sightings.length})</h2>
+      <p class="text-xs text-gh-soft m-0 mb-4">Primary evidence. One verified <span class="font-semibold">seen</span> starts the month globally — required before publishing.</p>
       <ul class="m-0 mb-5 p-0 list-none flex flex-col gap-2 text-sm">
         {#each detail.sightings as s, i (i)}
           <li class="border border-gh-line rounded-lg p-3">
@@ -192,14 +246,25 @@
             </select></label>
         </div>
         <label class={labelClass}>Witness / committee (optional)<input type="text" bind:value={sight.witnessOrg} class={inputClass} /></label>
-        <label class={labelClass}>Verification note<input type="text" bind:value={sight.noteEn} class={inputClass} /></label>
+        <div class="flex items-center justify-between gap-3 flex-wrap">
+          <span class="text-sm font-medium">Verification note</span>
+          <LangTabs bind:value={sightLang} missingAr={sightMissingAr} label="Testimony note language" />
+        </div>
+        {#if sightLang === 'en'}
+          <label class={labelClass}>English<input type="text" bind:value={sight.noteEn} onchange={() => sight.clearErrors('noteEn')} class={inputClass} />
+            {#if sight.errors.noteEn}<p class={errClass}>{sight.errors.noteEn}</p>{/if}</label>
+        {:else}
+          <label class={labelClass}>العربية — optional<input type="text" dir="rtl" lang="ar" bind:value={sight.noteAr} onchange={() => sight.clearErrors('noteAr')} class={inputClass} placeholder="Leave empty to show English" />
+            {#if sight.errors.noteAr}<p class={errClass}>{sight.errors.noteAr}</p>{/if}</label>
+        {/if}
         <label class="flex items-center gap-2 text-sm"><input type="checkbox" bind:checked={sight.verified} /> Verified testimony</label>
         <div><button type="submit" class={btnPrimary} disabled={sight.processing}>{sight.processing ? 'Saving…' : 'Add testimony'}</button></div>
       </form>
     </section>
 
     <section class="bg-gh-panel border border-gh-line rounded-lg p-6">
-      <h2 class="text-[1.1rem] m-0 mb-4">References ({detail.references.length})</h2>
+      <h2 class="text-[1.1rem] m-0 mb-1">References ({detail.references.length})</h2>
+      <p class="text-xs text-gh-soft m-0 mb-4">Supporting documents only — rulings, announcements, news. Never changes the date; confirmed months want ≥1.</p>
       <ul class="m-0 mb-5 p-0 list-none flex flex-col gap-2 text-sm">
         {#each detail.references as r, i (i)}
           <li class="border border-gh-line rounded-lg p-3">
@@ -213,8 +278,22 @@
       </ul>
       <h3 class="text-[0.95rem] m-0 mb-3">Add reference</h3>
       <form onsubmit={submitRef} novalidate class="grid gap-3">
-        <label class={labelClass}>Title<input type="text" bind:value={ref.titleEn} onchange={() => ref.clearErrors('titleEn')} class={inputClass} />
-          {#if ref.errors.titleEn}<p class={errClass}>{ref.errors.titleEn}</p>{/if}</label>
+        <div class="flex items-center justify-between gap-3 flex-wrap">
+          <span class="text-sm font-medium">Title & quote</span>
+          <LangTabs bind:value={refLang} missingAr={refMissingAr} label="Reference language" />
+        </div>
+        {#if refLang === 'en'}
+          <label class={labelClass}>Title<input type="text" bind:value={ref.titleEn} onchange={() => ref.clearErrors('titleEn')} class={inputClass} />
+            {#if ref.errors.titleEn}<p class={errClass}>{ref.errors.titleEn}</p>{/if}</label>
+          <label class={labelClass}>Quote<input type="text" bind:value={ref.quoteEn} onchange={() => ref.clearErrors('quoteEn')} class={inputClass} />
+            {#if ref.errors.quoteEn}<p class={errClass}>{ref.errors.quoteEn}</p>{/if}</label>
+        {:else}
+          <label class={labelClass}>Title — العربية, optional<input type="text" dir="rtl" lang="ar" bind:value={ref.titleAr} onchange={() => ref.clearErrors('titleAr')} class={inputClass} placeholder="Leave empty to show English" />
+            {#if ref.errors.titleAr}<p class={errClass}>{ref.errors.titleAr}</p>{/if}</label>
+          <label class={labelClass}>Quote — العربية, optional<input type="text" dir="rtl" lang="ar" bind:value={ref.quoteAr} onchange={() => ref.clearErrors('quoteAr')} class={inputClass} placeholder="Leave empty to show English" />
+            {#if ref.errors.quoteAr}<p class={errClass}>{ref.errors.quoteAr}</p>{/if}</label>
+          <p class="text-xs text-gh-soft m-0">Empty Arabic falls back to English on the public page.</p>
+        {/if}
         <div class="grid grid-cols-2 gap-3">
           <label class={labelClass}>Publisher<input type="text" bind:value={ref.publisher} onchange={() => ref.clearErrors('publisher')} class={inputClass} />
             {#if ref.errors.publisher}<p class={errClass}>{ref.errors.publisher}</p>{/if}</label>
@@ -229,7 +308,6 @@
         <label class={labelClass}>URL (https://)<input type="text" bind:value={ref.url} onchange={() => ref.clearErrors('url')} class={inputClass} />
           {#if ref.errors.url}<p class={errClass}>{ref.errors.url}</p>{/if}</label>
         <label class={labelClass}>Published (optional)<input type="date" bind:value={ref.publishedAt} class={inputClass} /></label>
-        <label class={labelClass}>Quote<input type="text" bind:value={ref.quoteEn} class={inputClass} /></label>
         <div><button type="submit" class={btnPrimary} disabled={ref.processing}>{ref.processing ? 'Saving…' : 'Add reference'}</button></div>
       </form>
     </section>

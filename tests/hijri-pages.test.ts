@@ -41,15 +41,18 @@ beforeAll(async () => {
 		const row = dbm.insertHijriMonth.get(
 			key, year, month, en, ar, start, end, len,
 			"confirmed", `Crescent sighted; ${en} declared globally.`,
+			`رُئي الهلال؛ أُعلن ${ar} عالميًا.`,
 			null, new Date().toISOString(),
 		)!;
 		dbm.insertSightingReport.get(
 			row.id, "Indonesia", "Sukabumi", null, null, addDays(start, -1),
 			"seen", "naked_eye", "Sukabumi committee", 1, "Testimony verified.",
+			"شهادة موثَّقة.",
 		);
 		dbm.insertMonthReference.get(
-			row.id, `${en} decision`, "Test Publisher",
-			`https://example.org/${key}`, start, "Crescent observed.", "official",
+			row.id, `${en} decision`, `قرار ${ar}`, "Test Publisher",
+			`https://example.org/${key}`, start, "Crescent observed.",
+			"رُئي الهلال.", "official",
 		);
 	};
 	mk("1447-09", 1447, 9, "Ramadan", "رمضان", startA, addDays(startA, 29), 30);

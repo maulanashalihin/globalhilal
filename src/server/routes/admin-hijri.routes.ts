@@ -64,6 +64,7 @@ const updateMonthBody = t.Object(
 			t.Literal("corrected"),
 		]),
 		decisionSummaryEn: t.String({ maxLength: 2000 }),
+		decisionSummaryAr: t.Optional(t.String({ maxLength: 2000 })),
 	},
 	{ additionalProperties: false },
 );
@@ -83,6 +84,7 @@ const sightingBody = t.Object(
 		witnessOrg: t.Optional(t.Union([t.String({ maxLength: 160 }), t.Null()])),
 		verified: t.Boolean(),
 		noteEn: t.String({ maxLength: 1000 }),
+		noteAr: t.Optional(t.String({ maxLength: 1000 })),
 	},
 	{ additionalProperties: false },
 );
@@ -90,10 +92,12 @@ const sightingBody = t.Object(
 const referenceBody = t.Object(
 	{
 		titleEn: t.String({ minLength: 4, maxLength: 240 }),
+		titleAr: t.Optional(t.String({ maxLength: 240 })),
 		publisher: t.String({ minLength: 2, maxLength: 160 }),
 		url: t.String({ minLength: 12, maxLength: 500 }),
 		publishedAt: t.Optional(t.Union([t.String({ maxLength: 10 }), t.Null()])),
 		quoteEn: t.String({ maxLength: 1000 }),
+		quoteAr: t.Optional(t.String({ maxLength: 1000 })),
 		kind: t.Union([
 			t.Literal("official"),
 			t.Literal("news"),
@@ -154,18 +158,48 @@ export const adminHijriRoutes = () => {
 		const sRows = listSightingsByMonth.all(row.id);
 		const rRows = listReferencesByMonth.all(row.id);
 		const base = serializeMonthDetail(row, sRows, rRows);
-		// Admin needs row ids for delete actions (public contract omits them).
+		// Admin needs row ids for delete actions (public contract omits them)
+		// plus the raw Arabic fields for the translation inputs.
 		const detail = {
 			...base,
-			sightings: base.sightings.map((s, i) => ({ ...s, id: sRows[i]!.id })),
-			references: base.references.map((r, i) => ({ ...r, id: rRows[i]!.id })),
+			month: { ...base.month, decision_summary_ar: row.decisionSummaryAr },
+			sightings: base.sightings.map((s, i) => ({
+				...s,
+				id: sRows[i]!.id,
+				note_ar: sRows[i]!.noteAr,
+			})),
+			references: base.references.map((r, i) => ({
+				...r,
+				id: rRows[i]!.id,
+				title_ar: rRows[i]!.titleAr,
+				quote_ar: rRows[i]!.quoteAr,
+			})),
 		};
+		// Translation hints only — publishing is never blocked on missing
+		// Arabic (owner decision): Arabic readers fall back to English.
+		const arHints: string[] = [];
+		if (row.status === "confirmed" || row.status === "corrected") {
+			if (!row.decisionSummaryAr.trim()) arHints.push("decision summary");
+			const missingNotes = sRows.filter(
+				(s) => s.result === "seen" && s.verified === 1 && !s.noteAr.trim(),
+			).length;
+			if (missingNotes > 0)
+				arHints.push(
+					`${missingNotes} testimony note${missingNotes === 1 ? "" : "s"}`,
+				);
+			const missingRefs = rRows.filter((r) => !r.titleAr.trim()).length;
+			if (missingRefs > 0)
+				arHints.push(
+					`${missingRefs} reference title${missingRefs === 1 ? "" : "s"}`,
+				);
+		}
 		const next = listPublicHijriMonthsAsc
 			.all()
 			.find((r) => r.startGregorian > row.startGregorian) ?? null;
 		return c.var.inertia.render("AdminHijriDetail", {
 			id: row.id,
 			detail,
+			arHints,
 			nextKey: next?.monthKey ?? null,
 			// Chain hygiene: this month should end the day before the next starts.
 			expectedEnd: next ? addDays(next.startGregorian, -1) : null,
@@ -192,6 +226,7 @@ export const adminHijriRoutes = () => {
 			null,
 			null,
 			"draft",
+			"",
 			"",
 			c.var.user?.id ?? null,
 			null,
@@ -226,6 +261,9 @@ export const adminHijriRoutes = () => {
 			body.lengthDays,
 			body.status,
 			body.decisionSummaryEn,
+			// Absent field = keep the existing translation (the admin form
+			// always sends it, empty string when the editor clears it).
+			body.decisionSummaryAr ?? row.decisionSummaryAr,
 			row.id,
 		);
 		if (c.var.sessionToken)
@@ -261,6 +299,7 @@ export const adminHijriRoutes = () => {
 			body.witnessOrg ?? null,
 			body.verified ? 1 : 0,
 			body.noteEn,
+			body.noteAr ?? "",
 		);
 		if (c.var.sessionToken) setFlash(c.var.sessionToken, { success: "Testimony recorded." });
 		return page.redirect(`/admin/hijri/${row.monthKey}`);
@@ -287,10 +326,12 @@ export const adminHijriRoutes = () => {
 		insertMonthReference.get(
 			row.id,
 			body.titleEn,
+			body.titleAr ?? "",
 			body.publisher,
 			body.url,
 			body.publishedAt ?? null,
 			body.quoteEn,
+			body.quoteAr ?? "",
 			body.kind,
 		);
 		if (c.var.sessionToken) setFlash(c.var.sessionToken, { success: "Reference added." });
@@ -340,6 +381,8 @@ export const adminHijriRoutes = () => {
 			report.reporterName,
 			1,
 			`${report.note} — submitted via the public witness form${report.contact ? ` (contact: ${report.contact})` : ""}.`,
+			// The editor adds the Arabic translation later if needed.
+			"",
 		);
 		setWitnessReportStatus.get("approved", report.id);
 		if (c.var.sessionToken)

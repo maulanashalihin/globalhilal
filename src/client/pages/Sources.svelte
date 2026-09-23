@@ -1,51 +1,46 @@
 <script lang="ts">
-  import { Link } from '@inertiajs/svelte'
+  import { Link, usePage } from '@inertiajs/svelte'
   import PublicLayout from '../components/PublicLayout.svelte'
+  import { dict } from '../i18n'
+  import type { Locale, SharedPageProps } from '../../shared/types'
+
+  const page = usePage<SharedPageProps>()
+  const locale = $derived((page.props.locale ?? 'en') as Locale)
+  const t = $derived(dict(locale))
 </script>
 
 <svelte:head>
-  <title>Sources — GlobalHilal</title>
-  <meta
-    name="description"
-    content="Where GlobalHilal rulings come from: official announcements, state news agencies, ministries and hilal committees worldwide."
-  />
+  <title>{t.sources.title} — GlobalHilal</title>
+  <meta name="description" content={t.meta.sourcesDescription} />
   <link rel="canonical" href="https://globalhilal.org/sources" />
 </svelte:head>
 
 <PublicLayout>
-  <p class="m-0 mb-1 text-[0.72rem] font-bold uppercase tracking-[0.2em] text-gh-gold">Sources</p>
+  <p class="m-0 mb-1 text-[0.72rem] font-bold uppercase tracking-[0.2em] text-gh-gold">{t.sources.kicker}</p>
   <h1 class="m-0 mb-3 tracking-tight text-[2rem] font-bold max-w-[22ch]">
-    Every ruling links to what actually happened.
+    {t.sources.h1}
   </h1>
   <p class="mt-0 mb-10 text-gh-soft max-w-[62ch]">
-    Each month we look for what truly occurred: official announcements,
-    state news agencies, ministries of religious affairs, and hilal
-    committees — in any country. Aggregators and blogs are supplementary
-    only, never the sole basis.
+    {t.sources.intro}
   </p>
 
   <div class="grid gap-8 md:grid-cols-2">
     <section>
-      <h2 class="m-0 mb-3 text-[0.72rem] font-bold uppercase tracking-[0.2em] text-gh-gold">We accept</h2>
+      <h2 class="m-0 mb-3 text-[0.72rem] font-bold uppercase tracking-[0.2em] text-gh-gold">{t.sources.accept}</h2>
       <ul class="m-0 p-0 list-none border-t border-gh-line text-[0.95rem]">
-        <li class="py-3 border-b border-gh-line">Moon-sighting committee announcements with named witnesses</li>
-        <li class="py-3 border-b border-gh-line">State news agencies reporting an official decision</li>
-        <li class="py-3 border-b border-gh-line">Ministries of religious affairs (Indonesia, Malaysia, Brunei, Morocco, Jordan, …)</li>
-        <li class="py-3 border-b border-gh-line">Recognised hilal committees publishing their testimony</li>
+        {#each t.sources.items as item (item)}
+          <li class="py-3 border-b border-gh-line">{item}</li>
+        {/each}
       </ul>
     </section>
     <section>
-      <h2 class="m-0 mb-3 text-[0.72rem] font-bold uppercase tracking-[0.2em] text-gh-gold">How to check us</h2>
-      <div class="border-l-4 border-gh-gold bg-gh-panel rounded-r-md p-5 text-[0.95rem] leading-relaxed">
+      <h2 class="m-0 mb-3 text-[0.72rem] font-bold uppercase tracking-[0.2em] text-gh-gold">{t.sources.check}</h2>
+      <div class="border-s-4 border-gh-gold bg-gh-panel rounded-e-md p-5 text-[0.95rem] leading-relaxed">
         <p class="m-0 mb-3">
-          Each reference lists its publisher, publication date and the exact
-          quoted sentence. Dead links are replaced with an archived copy.
+          {t.sources.checkBody1}
         </p>
         <p class="m-0">
-          Saw the crescent yourself?
-          <Link href="/contribute" class="font-semibold">Send your testimony</Link> —
-          editors verify every report, and corrections are published, never
-          silently edited.
+          {t.sources.checkBody2Lead}<Link href="/contribute" class="font-semibold">{t.sources.checkBody2Link}</Link>{t.sources.checkBody2Tail}
         </p>
       </div>
     </section>
