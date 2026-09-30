@@ -12,7 +12,7 @@
 <svelte:head>
   <title>{t.sources.title} — GlobalHilal</title>
   <meta name="description" content={t.meta.sourcesDescription} />
-  <link rel="canonical" href={`https://globalhilal.org/${locale}/sources`} />
+  <link rel="canonical" href={`https://globalhilal.com/${locale}/sources`} />
 </svelte:head>
 
 <PublicLayout>

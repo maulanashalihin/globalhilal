@@ -192,22 +192,22 @@ export const en = {
 			{
 				method: "GET /today",
 				desc: "Today's Hijri date. Query tz (IANA, default UTC) and date (YYYY-MM-DD, for testing).",
-				curl: 'curl "https://globalhilal.org/api/v1/today?tz=Asia/Jakarta"',
+				curl: 'curl "https://globalhilal.com/api/v1/today?tz=Asia/Jakarta"',
 			},
 			{
 				method: "GET /convert",
 				desc: "Hijri date for any Gregorian date: ?gregorian=YYYY-MM-DD&tz=…",
-				curl: 'curl "https://globalhilal.org/api/v1/convert?gregorian=2026-03-20"',
+				curl: 'curl "https://globalhilal.com/api/v1/convert?gregorian=2026-03-20"',
 			},
 			{
 				method: "GET /months",
 				desc: "History, newest first. Query hijri_year, status, perPage, page.",
-				curl: 'curl "https://globalhilal.org/api/v1/months?hijri_year=1447"',
+				curl: 'curl "https://globalhilal.com/api/v1/months?hijri_year=1447"',
 			},
 			{
 				method: "GET /months/current · /months/:year/:month",
 				desc: "The running month, or full detail with testimonies and references.",
-				curl: 'curl "https://globalhilal.org/api/v1/months/1447/9"',
+				curl: 'curl "https://globalhilal.com/api/v1/months/1447/9"',
 			},
 		],
 		errorsLead: "Errors are",

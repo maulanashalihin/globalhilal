@@ -18,7 +18,7 @@
   const monthSecondary = $derived(isAr ? m.month_en : m.month_ar)
   const year = $derived(fmtNum(m.hijri_year, locale))
   const sightedLabel = $derived(detail.sighted_in.map((p) => placeLabel(p, locale)).join('; '))
-  const pageUrl = $derived(`https://globalhilal.org/${locale}/hijri/${m.month_key}`)
+  const pageUrl = $derived(`https://globalhilal.com/${locale}/hijri/${m.month_key}`)
   const jsonLd = $derived(
     JSON.stringify({
       '@context': 'https://schema.org',

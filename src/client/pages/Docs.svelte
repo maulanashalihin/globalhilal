@@ -14,7 +14,7 @@
 <svelte:head>
   <title>{t.docs.title} — GlobalHilal</title>
   <meta name="description" content={t.meta.docsDescription} />
-  <link rel="canonical" href={`https://globalhilal.org/${locale}/docs`} />
+  <link rel="canonical" href={`https://globalhilal.com/${locale}/docs`} />
 </svelte:head>
 
 <PublicLayout>
@@ -22,7 +22,7 @@
   <h1 class="m-0 mb-3 tracking-tight text-[2rem] font-bold">{t.docs.h1}</h1>
   <p class="mt-0 mb-2 text-gh-soft max-w-[64ch]">
     {t.docs.intro}
-    <code dir="ltr" class="font-mono text-[0.85em] bg-gh-panel border border-gh-line rounded px-1.5 py-0.5">https://globalhilal.org/api/v1</code>.
+    <code dir="ltr" class="font-mono text-[0.85em] bg-gh-panel border border-gh-line rounded px-1.5 py-0.5">https://globalhilal.com/api/v1</code>.
   </p>
   <p class="mt-0 mb-10 text-sm text-gh-soft">{t.docs.published(fmtNum(total, locale))}</p>
 

@@ -191,22 +191,22 @@ export const ar: Dict = {
 			{
 				method: "GET /today",
 				desc: "تاريخ اليوم الهجري. المعاملان tz (IANA، الافتراضي UTC) وdate (YYYY-MM-DD، للاختبار).",
-				curl: 'curl "https://globalhilal.org/api/v1/today?tz=Asia/Jakarta"',
+				curl: 'curl "https://globalhilal.com/api/v1/today?tz=Asia/Jakarta"',
 			},
 			{
 				method: "GET /convert",
 				desc: "التاريخ الهجري لأي تاريخ ميلادي: ?gregorian=YYYY-MM-DD&tz=…",
-				curl: 'curl "https://globalhilal.org/api/v1/convert?gregorian=2026-03-20"',
+				curl: 'curl "https://globalhilal.com/api/v1/convert?gregorian=2026-03-20"',
 			},
 			{
 				method: "GET /months",
 				desc: "السجل، الأحدث أولًا. المعاملات hijri_year وstatus وperPage وpage.",
-				curl: 'curl "https://globalhilal.org/api/v1/months?hijri_year=1447"',
+				curl: 'curl "https://globalhilal.com/api/v1/months?hijri_year=1447"',
 			},
 			{
 				method: "GET /months/current · /months/:year/:month",
 				desc: "الشهر الجاري، أو التفاصيل الكاملة مع الشهادات والمصادر.",
-				curl: 'curl "https://globalhilal.org/api/v1/months/1447/9"',
+				curl: 'curl "https://globalhilal.com/api/v1/months/1447/9"',
 			},
 		],
 		errorsLead: "تأتي الأخطاء بالشكل",

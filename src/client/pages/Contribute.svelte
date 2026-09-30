@@ -41,7 +41,7 @@
 <svelte:head>
   <title>{t.contribute.title} — GlobalHilal</title>
   <meta name="description" content={t.meta.contributeDescription} />
-  <link rel="canonical" href={`https://globalhilal.org/${locale}/contribute`} />
+  <link rel="canonical" href={`https://globalhilal.com/${locale}/contribute`} />
 </svelte:head>
 
 <PublicLayout>

@@ -24,7 +24,7 @@
       ? `${fmtNum(today.hijri.day, locale)} ${monthPrimary} ${fmtNum(today.hijri.year, locale)} — GlobalHilal`
       : 'GlobalHilal — Global moon-sighting Hijri calendar',
   )
-  const canonical = `https://globalhilal.org/${locale}`
+  const canonical = `https://globalhilal.com/${locale}`
 </script>
 
 <svelte:head>

@@ -12,7 +12,7 @@
 <svelte:head>
   <title>{t.methodology.title} — GlobalHilal</title>
   <meta name="description" content={t.meta.methodologyDescription} />
-  <link rel="canonical" href={`https://globalhilal.org/${locale}/methodology`} />
+  <link rel="canonical" href={`https://globalhilal.com/${locale}/methodology`} />
 </svelte:head>
 
 <PublicLayout>

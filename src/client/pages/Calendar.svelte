@@ -22,7 +22,7 @@
 <svelte:head>
   <title>{selectedYear ? t.calendar.title(fmtNum(selectedYear, locale)) : t.calendar.titleFallback} — GlobalHilal</title>
   <meta name="description" content={t.meta.calendarDescription} />
-  <link rel="canonical" href={`https://globalhilal.org/${locale}/calendar`} />
+  <link rel="canonical" href={`https://globalhilal.com/${locale}/calendar`} />
 </svelte:head>
 
 <PublicLayout>

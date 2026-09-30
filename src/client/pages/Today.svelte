@@ -29,7 +29,7 @@
 <svelte:head>
   <title>{today ? `${fmtNum(today.hijri.day, locale)} ${monthPrimary} ${fmtNum(today.hijri.year, locale)}` : t.today.titleFallback} — GlobalHilal</title>
   <meta name="description" content={t.meta.todayDescription} />
-  <link rel="canonical" href={`https://globalhilal.org/${locale}/today`} />
+  <link rel="canonical" href={`https://globalhilal.com/${locale}/today`} />
 </svelte:head>
 
 <PublicLayout>
