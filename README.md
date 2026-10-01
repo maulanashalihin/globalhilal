@@ -328,7 +328,7 @@ gracefully).
 - **Bun 1.4+ required** — avatar upload uses `Bun.Image`.
 - **Testimony over tables**: when moon-sighting testimony and calculated
   calendars (e.g. Umm al-Qura) disagree, this site follows the testimony and
-  records the difference in `decision_summary_en`. Precedent: Rabi' al-Thani
+  records the difference in `decision_summary_en`. Precedent: Rabi' al-Akhir
   1448 began 13 Sep 2026 by istikmal (no 11 Sep testimony found anywhere),
   one day after the calculated table.
 - **Seed integrity**: month data is never fabricated — every row anchors to

@@ -119,7 +119,7 @@ CREATE INDEX IF NOT EXISTS idx_hijri_months_start ON hijri_months(start_gregoria
 
 Nama bulan (EN canonical, konsisten di seluruh web/API):
 
-`1 Muharram, 2 Safar, 3 Rabi' al-Awwal, 4 Rabi' al-Thani, 5 Jumada al-Ula, 6 Jumada al-Akhirah, 7 Rajab, 8 Sha'ban, 9 Ramadan, 10 Shawwal, 11 Dhu al-Qa'dah, 12 Dhu al-Hijjah`
+`1 Muharram, 2 Safar, 3 Rabi' al-Awwal, 4 Rabi' al-Akhir, 5 Jumada al-Ula, 6 Jumada al-Akhirah, 7 Rajab, 8 Sha'ban, 9 Ramadan, 10 Shawwal, 11 Dhu al-Qa'dah, 12 Dhu al-Hijjah`
 
 ### 5.2 `sighting_reports` (bukti rukyat per bulan)
 
@@ -358,7 +358,7 @@ Terkunci (dari pemilik):
 5. Referensi = cari putusan yang terjadi tiap bulan, catat sebagai `month_references`. ✅
 6. Brand = **GlobalHilal**, domain = **globalhilal.org**. ✅
 
-7. Preseden Rabi' al-Thani 1448 (approved): tidak ada kesaksian sah 11 Sep 2026 di
+7. Preseden Rabi' al-Akhir 1448 (approved): tidak ada kesaksian sah 11 Sep 2026 di
    mana pun (moonsighting.com kosong; UEA, Indonesia/Kemenag+NU, Amerika Utara,
    Inggris semua istikmal) → mulai **13 Sep 2026** (20 Sep = hari ke-8), MESKIPUN
    tabel hitung Umm al-Qura menulis 12 Sep (hari ke-9). Perbedaan ini dicatat

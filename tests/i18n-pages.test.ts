@@ -35,10 +35,10 @@ beforeAll(async () => {
 
 	const start = addDays(utcToday(), -5);
 	const row = dbm.insertHijriMonth.get(
-		"1448-04", 1448, 4, "Rabi' al-Thani", "ربيع الثاني",
+		"1448-04", 1448, 4, "Rabi' al-Akhir", "ربيع الآخر",
 		start, null, null, "confirmed",
-		"Crescent sighted in Tumair; Rabi' al-Thani declared globally.",
-		"رُئي الهلال في تمير؛ أُعلن ربيع الثاني عالميًا.",
+		"Crescent sighted in Tumair; Rabi' al-Akhir declared globally.",
+		"رُئي الهلال في تمير؛ أُعلن ربيع الآخر عالميًا.",
 		null, new Date().toISOString(),
 	)!;
 	dbm.insertSightingReport.get(
@@ -111,7 +111,7 @@ describe("locale prefixes on public pages", () => {
 	it("localizes the witness form chrome and month names", async () => {
 		const res = await get("/ar/contribute");
 		const html = await res.text();
-		expect(html).toContain("ربيع الثاني");
+		expect(html).toContain("ربيع الآخر");
 		expect(html).toContain("أرسل الشهادة");
 	});
 
@@ -169,10 +169,10 @@ describe("public API stays English", () => {
 			data: { determination: { decision_summary: string }; hijri: { month_ar: string } };
 		};
 		expect(body.data.determination.decision_summary).toBe(
-			"Crescent sighted in Tumair; Rabi' al-Thani declared globally.",
+			"Crescent sighted in Tumair; Rabi' al-Akhir declared globally.",
 		);
 		// The Arabic month name is still part of the canonical payload.
-		expect(body.data.hijri.month_ar).toBe("ربيع الثاني");
+		expect(body.data.hijri.month_ar).toBe("ربيع الآخر");
 	});
 
 	it("keeps the English month detail contract", async () => {

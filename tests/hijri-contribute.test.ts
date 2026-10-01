@@ -22,7 +22,7 @@ beforeAll(async () => {
 	app = createApp({ version: "test", js: "app.js", css: "app.css" });
 
 	dbm.insertHijriMonth.get(
-		"1448-04", 1448, 4, "Rabi' al-Thani", "ربيع الثاني",
+		"1448-04", 1448, 4, "Rabi' al-Akhir", "ربيع الآخر",
 		"2026-09-13", null, null, "confirmed", "Seeded.", "", null, new Date().toISOString(),
 	);
 
