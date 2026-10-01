@@ -42,6 +42,12 @@
   <title>{t.contribute.title} — GlobalHilal</title>
   <meta name="description" content={t.meta.contributeDescription} />
   <link rel="canonical" href={`https://globalhilal.com/${locale}/contribute`} />
+  <meta property="og:title" content={`${t.contribute.title} — GlobalHilal`} />
+  <meta property="og:type" content="website" />
+  <meta property="og:url" content={`https://globalhilal.com/${locale}/contribute`} />
+  <meta property="og:image" content="https://globalhilal.com/og.png" />
+  <meta property="og:description" content={t.meta.contributeDescription} />
+  <meta name="twitter:card" content="summary_large_image" />
 </svelte:head>
 
 <PublicLayout>

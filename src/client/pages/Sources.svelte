@@ -13,6 +13,12 @@
   <title>{t.sources.title} — GlobalHilal</title>
   <meta name="description" content={t.meta.sourcesDescription} />
   <link rel="canonical" href={`https://globalhilal.com/${locale}/sources`} />
+  <meta property="og:title" content={`${t.sources.title} — GlobalHilal`} />
+  <meta property="og:type" content="website" />
+  <meta property="og:url" content={`https://globalhilal.com/${locale}/sources`} />
+  <meta property="og:image" content="https://globalhilal.com/og.png" />
+  <meta property="og:description" content={t.meta.sourcesDescription} />
+  <meta name="twitter:card" content="summary_large_image" />
 </svelte:head>
 
 <PublicLayout>

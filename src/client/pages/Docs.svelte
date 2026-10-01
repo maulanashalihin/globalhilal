@@ -15,6 +15,12 @@
   <title>{t.docs.title} — GlobalHilal</title>
   <meta name="description" content={t.meta.docsDescription} />
   <link rel="canonical" href={`https://globalhilal.com/${locale}/docs`} />
+  <meta property="og:title" content={`${t.docs.title} — GlobalHilal`} />
+  <meta property="og:type" content="website" />
+  <meta property="og:url" content={`https://globalhilal.com/${locale}/docs`} />
+  <meta property="og:image" content="https://globalhilal.com/og.png" />
+  <meta property="og:description" content={t.meta.docsDescription} />
+  <meta name="twitter:card" content="summary_large_image" />
 </svelte:head>
 
 <PublicLayout>

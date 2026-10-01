@@ -309,6 +309,16 @@ export function createApp(assets: InertiaAssets) {
 	app.get("/.well-known/*", () => new Response(null, { status: 404 }));
 
 	// SEO infra endpoints (not feature routes — see AGENTS.md).
+	app.get("/og.png", async () => {
+		const file = Bun.file("public/og.png");
+		if (!(await file.exists())) return new Response("Not found", { status: 404 });
+		return new Response(file, {
+			headers: {
+				"content-type": "image/png",
+				"cache-control": "public, max-age=86400, stale-while-revalidate=604800",
+			},
+		});
+	});
 	app.get("/robots.txt", () => {
 		const body = `User-agent: *\nAllow: /\nSitemap: ${config.appUrl}/sitemap.xml\n`;
 		return new Response(body, {

@@ -40,6 +40,9 @@
   <meta property="og:title" content={`${monthPrimary} ${year} — GlobalHilal`} />
   <meta property="og:type" content="article" />
   <meta property="og:url" content={pageUrl} />
+  <meta property="og:image" content="https://globalhilal.com/og.png" />
+  <meta property="og:description" content={`${monthPrimary} ${year}: ${sightedLabel || '—'}. ${m.decision_summary}`} />
+  <meta name="twitter:card" content="summary_large_image" />
   {@html `<script type="application/ld+json">${jsonLd}</script>`}
 </svelte:head>
 

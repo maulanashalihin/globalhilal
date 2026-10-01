@@ -263,7 +263,7 @@ export class Inertia {
 			? `<link rel="stylesheet" href="/assets/${this.assets.css}" />`
 			: "";
 		const favicon = `<link rel="icon" href="data:image/svg+xml,${encodeURIComponent(
-			'<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32"><rect width="32" height="32" rx="8" fill="#059669"/><path d="M12 9h2.2c5.6 0 9.3 3.1 9.3 7s-3.7 7-9.3 7H12V9Z" fill="none" stroke="white" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/><rect x="16" y="18.2" width="4.4" height="2.2" rx="1.1" fill="#059669"/></svg>',
+			'<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32"><rect width="32" height="32" rx="8" fill="#0b1526"/><path d="M20.5 4.5A13 13 0 1 0 27.5 20 10.5 10.5 0 0 1 20.5 4.5Z" fill="#e3b93e"/><circle cx="22.5" cy="10" r="1.6" fill="#e3b93e" opacity="0.7"/></svg>',
 		)}" />`;
 		// Inline script: set data-theme + background-color on <html> before the
 		// external stylesheet loads, so the page paints dark immediately (no FOUC).

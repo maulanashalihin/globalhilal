@@ -30,6 +30,12 @@
   <title>{today ? `${fmtNum(today.hijri.day, locale)} ${monthPrimary} ${fmtNum(today.hijri.year, locale)}` : t.today.titleFallback} — GlobalHilal</title>
   <meta name="description" content={t.meta.todayDescription} />
   <link rel="canonical" href={`https://globalhilal.com/${locale}/today`} />
+  <meta property="og:title" content={`${today ? `${fmtNum(today.hijri.day, locale)} ${monthPrimary} ${fmtNum(today.hijri.year, locale)}` : t.today.titleFallback} — GlobalHilal`} />
+  <meta property="og:type" content="website" />
+  <meta property="og:url" content={`https://globalhilal.com/${locale}/today`} />
+  <meta property="og:image" content="https://globalhilal.com/og.png" />
+  <meta property="og:description" content={t.meta.todayDescription} />
+  <meta name="twitter:card" content="summary_large_image" />
 </svelte:head>
 
 <PublicLayout>

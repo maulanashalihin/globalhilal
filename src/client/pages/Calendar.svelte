@@ -23,6 +23,12 @@
   <title>{selectedYear ? t.calendar.title(fmtNum(selectedYear, locale)) : t.calendar.titleFallback} — GlobalHilal</title>
   <meta name="description" content={t.meta.calendarDescription} />
   <link rel="canonical" href={`https://globalhilal.com/${locale}/calendar`} />
+  <meta property="og:title" content={`${selectedYear ? t.calendar.title(fmtNum(selectedYear, locale)) : t.calendar.titleFallback} — GlobalHilal`} />
+  <meta property="og:type" content="website" />
+  <meta property="og:url" content={`https://globalhilal.com/${locale}/calendar`} />
+  <meta property="og:image" content="https://globalhilal.com/og.png" />
+  <meta property="og:description" content={t.meta.calendarDescription} />
+  <meta name="twitter:card" content="summary_large_image" />
 </svelte:head>
 
 <PublicLayout>
